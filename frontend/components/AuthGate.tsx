@@ -178,6 +178,28 @@ export default function AuthGate({
     }
   };
 
+  const handleGoogleOAuth = async () => {
+    setStatus(null);
+    if (cooldownSeconds > 0) {
+      setStatus(`Please wait ${cooldownSeconds}s before trying again.`);
+      return;
+    }
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    setIsSubmitting(false);
+    if (error) {
+      setStatus(error.message);
+      handleRateLimit(error.message);
+    } else {
+      startCooldown(10);
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white text-black">
@@ -269,6 +291,15 @@ export default function AuthGate({
               disabled={isSubmitting || cooldownSeconds > 0}
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
+            </button>
+          ) : null}
+          {mode === "signIn" || mode === "signUp" ? (
+            <button
+              className="w-full rounded border border-black/20 px-4 py-2 text-sm disabled:text-black/40"
+              onClick={handleGoogleOAuth}
+              disabled={isSubmitting || cooldownSeconds > 0}
+            >
+              Continue with Google
             </button>
           ) : null}
           {mode === "signUp" ? (
