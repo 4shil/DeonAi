@@ -35,6 +35,7 @@ export default function ChatApp({ session }: { session: Session }) {
   const [input, setInput] = useState("");
   const [modelId, setModelId] = useState(defaultModel);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const authHeader = useMemo(
     () => ({ Authorization: `Bearer ${session.access_token}` }),
@@ -42,17 +43,24 @@ export default function ChatApp({ session }: { session: Session }) {
   );
 
   const loadConversations = useCallback(async () => {
-    const response = await fetch(`${apiBaseUrl}/api/conversations`, {
-      headers: authHeader,
-    });
-    if (!response.ok) {
-      return;
-    }
-    const data = (await response.json()) as Conversation[];
-    setConversations(data);
-    if (!selectedConversationId && data.length) {
-      setSelectedConversationId(data[0].id);
-      setModelId(data[0].model_id || defaultModel);
+    try {
+      setApiError(null);
+      const response = await fetch(`${apiBaseUrl}/api/conversations`, {
+        headers: authHeader,
+      });
+      if (!response.ok) {
+        return;
+      }
+      const data = (await response.json()) as Conversation[];
+      setConversations(data);
+      if (!selectedConversationId && data.length) {
+        setSelectedConversationId(data[0].id);
+        setModelId(data[0].model_id || defaultModel);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reach API";
+      setApiError(message);
     }
   }, [apiBaseUrl, authHeader, selectedConversationId]);
 
@@ -89,16 +97,23 @@ export default function ChatApp({ session }: { session: Session }) {
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
-    await fetch(`${apiBaseUrl}/api/conversations/${conversationId}`, {
-      method: "DELETE",
-      headers: authHeader,
-    });
-    setConversations((items) =>
-      items.filter((item) => item.id !== conversationId)
-    );
-    if (selectedConversationId === conversationId) {
-      setSelectedConversationId(null);
-      setMessages([]);
+    try {
+      setApiError(null);
+      await fetch(`${apiBaseUrl}/api/conversations/${conversationId}`, {
+        method: "DELETE",
+        headers: authHeader,
+      });
+      setConversations((items) =>
+        items.filter((item) => item.id !== conversationId)
+      );
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reach API";
+      setApiError(message);
     }
   };
 
@@ -124,18 +139,28 @@ export default function ChatApp({ session }: { session: Session }) {
     setStreamingMessage("");
     setIsStreaming(true);
 
-    const response = await fetch(`${apiBaseUrl}/api/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({
-        message: userMessage.content,
-        model_id: modelId,
-        conversation_id: selectedConversationId,
-      }),
-    });
+    let response: Response;
+    try {
+      setApiError(null);
+      response = await fetch(`${apiBaseUrl}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          model_id: modelId,
+          conversation_id: selectedConversationId,
+        }),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reach API";
+      setApiError(message);
+      setIsStreaming(false);
+      return;
+    }
 
     if (!response.body) {
       setIsStreaming(false);
@@ -201,6 +226,11 @@ export default function ChatApp({ session }: { session: Session }) {
 
   return (
     <main className="min-h-screen bg-white text-black">
+      {apiError ? (
+        <div className="border-b border-black/10 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+          API error: {apiError}. Check that the backend is running at {apiBaseUrl}.
+        </div>
+      ) : null}
       <div className="flex min-h-screen">
         <Sidebar
           conversations={conversations}
