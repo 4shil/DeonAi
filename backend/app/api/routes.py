@@ -3,7 +3,11 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.models import ChatRequest, UpdateConversationRequest
+from app.api.models import (
+    ChatRequest,
+    CreateConversationRequest,
+    UpdateConversationRequest,
+)
 from app.core.auth import get_auth_context
 from app.db.supabase import get_user_supabase_client
 from app.services.openrouter import stream_chat
@@ -105,6 +109,30 @@ def list_conversations(
         .execute()
     )
     return response.data or []
+
+
+@router.post("/conversations")
+def create_conversation(
+    payload: CreateConversationRequest,
+    auth_context: tuple[str, str] = Depends(get_auth_context),
+):
+    user_id, access_token = auth_context
+    supabase = get_user_supabase_client(access_token)
+    title = (payload.title or "New conversation").strip()
+    response = (
+        supabase.table("conversations")
+        .insert(
+            {
+                "user_id": user_id,
+                "title": title,
+                "model_id": payload.model_id,
+            }
+        )
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to create conversation")
+    return response.data[0]
 
 
 @router.get("/conversations/{conversation_id}/messages")
