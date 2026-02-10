@@ -5,6 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import ChatArea from "./ChatArea";
 import Sidebar from "./Sidebar";
+import { supabase } from "../lib/supabaseClient";
 
 const defaultModel = "google/gemini-2.0-flash-exp:free";
 
@@ -40,6 +41,7 @@ export default function ChatApp({ session }: { session: Session }) {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [isRenamingConversation, setIsRenamingConversation] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const authHeader = useMemo(
     () => ({ Authorization: `Bearer ${session.access_token}` }),
@@ -148,6 +150,7 @@ export default function ChatApp({ session }: { session: Session }) {
 
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
+    setIsSidebarOpen(false);
     const selected = conversations.find((item) => item.id === conversationId);
     if (selected?.model_id) {
       setModelId(selected.model_id);
@@ -199,6 +202,7 @@ export default function ChatApp({ session }: { session: Session }) {
       const data = (await response.json()) as Conversation;
       setConversations((items) => [data, ...items]);
       setSelectedConversationId(data.id);
+      setIsSidebarOpen(false);
       setMessages([]);
       setModelId(data.model_id || defaultModel);
     } catch (error) {
@@ -208,6 +212,10 @@ export default function ChatApp({ session }: { session: Session }) {
     } finally {
       setIsCreatingConversation(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
   };
 
   const handleRenameConversation = async (title: string) => {
@@ -380,9 +388,34 @@ export default function ChatApp({ session }: { session: Session }) {
           onSelectConversation={handleSelectConversation}
           onDeleteConversation={handleDeleteConversation}
           onNewConversation={handleNewConversation}
+          onSignOut={handleSignOut}
           isLoading={isLoadingConversations}
           isCreating={isCreatingConversation}
+          className="hidden md:block"
+          userEmail={session.user.email}
         />
+        {isSidebarOpen ? (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        ) : null}
+        {isSidebarOpen ? (
+          <Sidebar
+            conversations={conversations}
+            selectedConversationId={selectedConversationId}
+            onSelectConversation={handleSelectConversation}
+            onDeleteConversation={handleDeleteConversation}
+            onNewConversation={handleNewConversation}
+            onSignOut={handleSignOut}
+            isLoading={isLoadingConversations}
+            isCreating={isCreatingConversation}
+            className="fixed inset-y-0 left-0 z-50 md:hidden"
+            showClose
+            onClose={() => setIsSidebarOpen(false)}
+            userEmail={session.user.email}
+          />
+        ) : null}
         <ChatArea
           title={chatTitle}
           modelId={modelId}
@@ -398,6 +431,7 @@ export default function ChatApp({ session }: { session: Session }) {
           canRename={hasConversation}
           isRenaming={isRenamingConversation}
           onRenameConversation={handleRenameConversation}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
         />
       </div>
     </main>

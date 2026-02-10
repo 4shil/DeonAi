@@ -3,15 +3,15 @@
 ## 1. Planning and Setup
 - [ ] Confirm final requirements and edge cases (auth flow, threading, models).
 - [ ] Define success criteria and non-goals.
-- [ ] Create repo and basic README.
-- [ ] Set up environment variables plan (OpenRouter key, Supabase URL/anon key, JWT secret).
+- [x] Create repo and basic README.
+- [x] Set up environment variables plan (OpenRouter key, Supabase URL/anon key, JWT secret).
 
 ## 2. Supabase Data Model and Security
-- [ ] Create `conversations` table with fields: id, user_id, title, model_id, created_at.
-- [ ] Create `messages` table with fields: id, conversation_id, role, content, created_at.
-- [ ] Add indexes for user_id and conversation_id.
-- [ ] Enable Row Level Security (RLS) for both tables.
-- [ ] Add RLS policies to allow users to read/write only their own rows.
+- [x] Create `conversations` table with fields: id, user_id, title, model_id, created_at.
+- [x] Create `messages` table with fields: id, conversation_id, role, content, created_at.
+- [x] Add indexes for user_id and conversation_id.
+- [x] Enable Row Level Security (RLS) for both tables.
+- [x] Add RLS policies to allow users to read/write only their own rows.
 
 ## 3. Supabase Auth
 - [ ] Enable Magic Link and Email auth providers.
@@ -19,44 +19,44 @@
 - [ ] Verify JWT settings for backend validation.
 
 ## 4. Backend (FastAPI)
-- [ ] Create FastAPI project structure.
-- [ ] Configure settings and env loading.
-- [ ] Add Supabase client for database operations.
-- [ ] Add JWT verification middleware/dependency.
-- [ ] Implement GET `/api/conversations`.
-- [ ] Implement DELETE `/api/conversations/{id}`.
-- [ ] Implement POST `/api/chat` (streaming endpoint).
+- [x] Create FastAPI project structure.
+- [x] Configure settings and env loading.
+- [x] Add Supabase client for database operations.
+- [x] Add JWT verification middleware/dependency.
+- [x] Implement GET `/api/conversations`.
+- [x] Implement DELETE `/api/conversations/{id}`.
+- [x] Implement POST `/api/chat` (streaming endpoint).
 
 ## 5. OpenRouter Streaming Integration
-- [ ] Add OpenRouter client with model selector.
-- [ ] Stream tokens to the client using SSE or chunked response.
-- [ ] Persist user and assistant messages to Supabase.
-- [ ] Handle errors and partial responses safely.
+- [x] Add OpenRouter client with model selector.
+- [x] Stream tokens to the client using SSE or chunked response.
+- [x] Persist user and assistant messages to Supabase.
+- [x] Handle errors and partial responses safely.
 
 ## 6. Frontend (Next.js)
-- [ ] Initialize Next.js app with Tailwind and Lucide.
-- [ ] Implement global layout and theme (high-contrast, no glassmorphism).
-- [ ] Build sidebar layout (threads list + create/delete).
-- [ ] Build main chat area (message list + composer).
-- [ ] Add model dropdown with required models.
+- [x] Initialize Next.js app with Tailwind and Lucide.
+- [x] Implement global layout and theme (high-contrast, no glassmorphism).
+- [x] Build sidebar layout (threads list + create/delete).
+- [x] Build main chat area (message list + composer).
+- [x] Add model dropdown with required models.
 
 ## 7. Frontend Auth and Data Flow
-- [ ] Integrate Supabase client in Next.js.
-- [ ] Implement sign-in page and session handling.
-- [ ] Attach JWT to backend API calls.
-- [ ] Fetch and render conversations.
-- [ ] Create, switch, and delete threads.
+- [x] Integrate Supabase client in Next.js.
+- [x] Implement sign-in page and session handling.
+- [x] Attach JWT to backend API calls.
+- [x] Fetch and render conversations.
+- [x] Create, switch, and delete threads.
 
 ## 8. Chat UX and Streaming
-- [ ] Send user message and open streaming response.
-- [ ] Render assistant tokens live.
-- [ ] Show loading states and errors.
-- [ ] Ensure message persistence after streaming ends.
+- [x] Send user message and open streaming response.
+- [x] Render assistant tokens live.
+- [x] Show loading states and errors.
+- [x] Ensure message persistence after streaming ends.
 
 ## 9. Responsive and Accessibility
-- [ ] Make sidebar collapsible on mobile.
+- [x] Make sidebar collapsible on mobile.
 - [ ] Verify contrast, typography, and spacing.
-- [ ] Keyboard focus and basic ARIA labels.
+- [x] Keyboard focus and basic ARIA labels.
 
 ## 10. Testing and Hardening
 - [ ] Test auth flows (sign-in, sign-out, session restore).
