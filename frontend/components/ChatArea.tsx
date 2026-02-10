@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 type Message = {
   role: "user" | "assistant" | "system";
   content: string;
@@ -13,6 +15,11 @@ type ChatAreaProps = {
   onInputChange: (value: string) => void;
   onSend: () => void;
   isStreaming: boolean;
+  isLoadingMessages: boolean;
+  hasConversation: boolean;
+  canRename: boolean;
+  isRenaming: boolean;
+  onRenameConversation: (title: string) => Promise<void> | void;
 };
 
 export default function ChatArea({
@@ -25,12 +32,72 @@ export default function ChatArea({
   onInputChange,
   onSend,
   isStreaming,
+  isLoadingMessages,
+  hasConversation,
+  canRename,
+  isRenaming,
+  onRenameConversation,
 }: ChatAreaProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(title);
+
+  useEffect(() => {
+    setDraftTitle(title);
+  }, [title]);
+
+  const handleSaveTitle = async () => {
+    const nextTitle = draftTitle.trim();
+    if (!nextTitle || !canRename) {
+      return;
+    }
+    await onRenameConversation(nextTitle);
+    setIsEditingTitle(false);
+  };
+
   return (
     <section className="flex min-h-screen flex-1 flex-col">
       <header className="border-b border-black/10 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <div className="flex items-center gap-2">
+            {isEditingTitle ? (
+              <input
+                className="rounded border border-black/20 px-2 py-1 text-sm"
+                value={draftTitle}
+                onChange={(event) => setDraftTitle(event.target.value)}
+              />
+            ) : (
+              <h2 className="text-lg font-semibold">{title}</h2>
+            )}
+            {canRename ? (
+              isEditingTitle ? (
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    className="rounded border border-black/20 px-2 py-1"
+                    onClick={handleSaveTitle}
+                    disabled={isRenaming}
+                  >
+                    {isRenaming ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    className="rounded border border-black/10 px-2 py-1"
+                    onClick={() => {
+                      setDraftTitle(title);
+                      setIsEditingTitle(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="rounded border border-black/20 px-2 py-1 text-xs"
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  Rename
+                </button>
+              )
+            ) : null}
+          </div>
           <select
             className="rounded border border-black/20 px-2 py-1 text-sm"
             value={modelId}
@@ -46,7 +113,19 @@ export default function ChatArea({
         </div>
       </header>
       <div className="flex-1 space-y-4 p-4">
-        {messages.length === 0 && !streamingMessage ? (
+        {!hasConversation && !isLoadingMessages ? (
+          <div className="max-w-2xl rounded border border-black/10 p-3">
+            <p className="text-sm">
+              Start a new conversation from the sidebar.
+            </p>
+          </div>
+        ) : null}
+        {isLoadingMessages ? (
+          <div className="max-w-2xl rounded border border-black/10 p-3">
+            <p className="text-sm">Loading messages...</p>
+          </div>
+        ) : null}
+        {hasConversation && messages.length === 0 && !streamingMessage ? (
           <div className="max-w-2xl rounded border border-black/10 p-3">
             <p className="text-sm">Ask me anything to get started.</p>
           </div>
