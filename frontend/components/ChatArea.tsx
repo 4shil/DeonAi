@@ -20,6 +20,7 @@ type ChatAreaProps = {
   canRename: boolean;
   isRenaming: boolean;
   onRenameConversation: (title: string) => Promise<void> | void;
+  onOpenSidebar: () => void;
 };
 
 export default function ChatArea({
@@ -37,6 +38,7 @@ export default function ChatArea({
   canRename,
   isRenaming,
   onRenameConversation,
+  onOpenSidebar,
 }: ChatAreaProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
@@ -59,11 +61,19 @@ export default function ChatArea({
       <header className="border-b border-black/10 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <button
+              className="rounded border border-black/10 px-2 py-1 text-xs md:hidden"
+              onClick={onOpenSidebar}
+              aria-label="Open sidebar"
+            >
+              Menu
+            </button>
             {isEditingTitle ? (
               <input
                 className="rounded border border-black/20 px-2 py-1 text-sm"
                 value={draftTitle}
                 onChange={(event) => setDraftTitle(event.target.value)}
+                aria-label="Conversation title"
               />
             ) : (
               <h2 className="text-lg font-semibold">{title}</h2>
@@ -75,6 +85,7 @@ export default function ChatArea({
                     className="rounded border border-black/20 px-2 py-1"
                     onClick={handleSaveTitle}
                     disabled={isRenaming}
+                    aria-label="Save conversation title"
                   >
                     {isRenaming ? "Saving..." : "Save"}
                   </button>
@@ -84,6 +95,7 @@ export default function ChatArea({
                       setDraftTitle(title);
                       setIsEditingTitle(false);
                     }}
+                    aria-label="Cancel renaming"
                   >
                     Cancel
                   </button>
@@ -92,6 +104,7 @@ export default function ChatArea({
                 <button
                   className="rounded border border-black/20 px-2 py-1 text-xs"
                   onClick={() => setIsEditingTitle(true)}
+                  aria-label="Rename conversation"
                 >
                   Rename
                 </button>
@@ -102,6 +115,7 @@ export default function ChatArea({
             className="rounded border border-black/20 px-2 py-1 text-sm"
             value={modelId}
             onChange={(event) => onModelChange(event.target.value)}
+            aria-label="Select model"
           >
             <option value="google/gemini-2.0-flash-exp:free">
               gemini-2.0-flash-exp:free
@@ -112,7 +126,7 @@ export default function ChatArea({
           </select>
         </div>
       </header>
-      <div className="flex-1 space-y-4 p-4">
+      <div className="flex-1 space-y-4 p-4" aria-live="polite">
         {!hasConversation && !isLoadingMessages ? (
           <div className="max-w-2xl rounded border border-black/10 p-3">
             <p className="text-sm">
@@ -170,11 +184,13 @@ export default function ChatArea({
                 onSend();
               }
             }}
+            aria-label="Message input"
           />
           <button
             className="rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
             onClick={onSend}
             disabled={isStreaming}
+            aria-label="Send message"
           >
             Send
           </button>
