@@ -16,7 +16,7 @@ services:
       - key: SUPABASE_JWT_SECRET
         sync: false
       - key: CORS_ALLOW_ORIGINS
-        value: https://chatbot-frontend-unb3.onrender.com
+        value: https://chatbot-frontend-unb3.onrender.com,http://localhost:3000
       - key: ALLOWED_MODEL_IDS
         sync: false
 
