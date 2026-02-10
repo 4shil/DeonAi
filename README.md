@@ -13,6 +13,7 @@ OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_JWT_SECRET=your_jwt_secret
+ALLOWED_MODEL_IDS=google/gemini-2.0-flash-exp:free,meta-llama/llama-3-8b-instruct:free
 CORS_ALLOW_ORIGINS=http://localhost:3000
 ```
 

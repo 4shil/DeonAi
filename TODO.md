@@ -14,9 +14,9 @@
 - [x] Add RLS policies to allow users to read/write only their own rows.
 
 ## 3. Supabase Auth
-- [ ] Enable Magic Link and Email auth providers.
-- [ ] Configure redirect URLs for local and production.
-- [ ] Verify JWT settings for backend validation.
+- [ ] Enable Magic Link and Email auth providers. (manual in Supabase dashboard)
+- [ ] Configure redirect URLs for local and production. (manual in Supabase dashboard)
+- [ ] Verify JWT settings for backend validation. (manual in Supabase dashboard)
 
 ## 4. Backend (FastAPI)
 - [x] Create FastAPI project structure.
@@ -55,22 +55,22 @@
 
 ## 9. Responsive and Accessibility
 - [x] Make sidebar collapsible on mobile.
-- [ ] Verify contrast, typography, and spacing.
+- [x] Verify contrast, typography, and spacing.
 - [x] Keyboard focus and basic ARIA labels.
 
 ## 10. Testing and Hardening
 - [ ] Test auth flows (sign-in, sign-out, session restore).
 - [ ] Test streaming under slow network.
 - [ ] Validate RLS with multiple users.
-- [ ] Add input validation and request limits.
+- [x] Add input validation and request limits.
 
 ## 11. Deployment
-- [ ] Configure production env vars.
-- [ ] Deploy frontend (Vercel or similar).
-- [ ] Deploy backend (Railway/Fly/Render).
-- [ ] Confirm Supabase URLs and JWT settings.
+- [ ] Configure production env vars. (manual)
+- [ ] Deploy frontend (Vercel or similar). (manual)
+- [ ] Deploy backend (Railway/Fly/Render). (manual)
+- [ ] Confirm Supabase URLs and JWT settings. (manual)
 
 ## 12. Post-Launch
-- [ ] Set up basic logging and monitoring.
+- [x] Set up basic logging and monitoring.
 - [ ] Track error rates and latency.
 - [ ] Gather feedback and prioritize fixes.
