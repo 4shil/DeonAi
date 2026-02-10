@@ -21,6 +21,8 @@ export default function AuthGate({
   >("signIn");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,8 +48,45 @@ export default function AuthGate({
     };
   }, []);
 
+  useEffect(() => {
+    if (!cooldownUntil) {
+      setCooldownSeconds(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const remainingMs = cooldownUntil - Date.now();
+      const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+      setCooldownSeconds(remaining);
+      if (remaining <= 0) {
+        setCooldownUntil(null);
+      }
+    };
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [cooldownUntil]);
+
+  const startCooldown = (seconds: number) => {
+    if (seconds <= 0) {
+      return;
+    }
+    setCooldownUntil(Date.now() + seconds * 1000);
+  };
+
+  const handleRateLimit = (message: string) => {
+    if (message.toLowerCase().includes("rate")) {
+      startCooldown(60);
+    }
+  };
+
   const handleSignIn = async () => {
     setStatus(null);
+    if (cooldownSeconds > 0) {
+      setStatus(`Please wait ${cooldownSeconds}s before trying again.`);
+      return;
+    }
     if (!email || !password) {
       setStatus("Enter your email and password.");
       return;
@@ -60,11 +99,18 @@ export default function AuthGate({
     setIsSubmitting(false);
     if (error) {
       setStatus(error.message);
+      handleRateLimit(error.message);
+    } else {
+      startCooldown(10);
     }
   };
 
   const handleSignUp = async () => {
     setStatus(null);
+    if (cooldownSeconds > 0) {
+      setStatus(`Please wait ${cooldownSeconds}s before trying again.`);
+      return;
+    }
     if (!email || !password) {
       setStatus("Enter your email and password.");
       return;
@@ -78,13 +124,19 @@ export default function AuthGate({
     setIsSubmitting(false);
     if (error) {
       setStatus(error.message);
+      handleRateLimit(error.message);
     } else {
       setStatus("Check your email to confirm your account.");
+      startCooldown(30);
     }
   };
 
   const handleForgotPassword = async () => {
     setStatus(null);
+    if (cooldownSeconds > 0) {
+      setStatus(`Please wait ${cooldownSeconds}s before trying again.`);
+      return;
+    }
     if (!email) {
       setStatus("Enter your email to receive a reset link.");
       return;
@@ -96,8 +148,10 @@ export default function AuthGate({
     setIsSubmitting(false);
     if (error) {
       setStatus(error.message);
+      handleRateLimit(error.message);
     } else {
       setStatus("Password reset link sent. Check your email.");
+      startCooldown(60);
     }
   };
 
@@ -212,7 +266,7 @@ export default function AuthGate({
             <button
               className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
               onClick={handleSignIn}
-              disabled={isSubmitting}
+              disabled={isSubmitting || cooldownSeconds > 0}
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
@@ -221,7 +275,7 @@ export default function AuthGate({
             <button
               className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
               onClick={handleSignUp}
-              disabled={isSubmitting}
+              disabled={isSubmitting || cooldownSeconds > 0}
             >
               {isSubmitting ? "Creating..." : "Create account"}
             </button>
@@ -230,7 +284,7 @@ export default function AuthGate({
             <button
               className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
               onClick={handleForgotPassword}
-              disabled={isSubmitting}
+              disabled={isSubmitting || cooldownSeconds > 0}
             >
               {isSubmitting ? "Sending..." : "Send reset link"}
             </button>
