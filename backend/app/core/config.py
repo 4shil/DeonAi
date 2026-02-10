@@ -18,6 +18,16 @@ def get_env(name: str, default: str | None = None) -> str:
     return value
 
 
+def get_env_int(name: str, default: int) -> int:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid int for env var: {name}") from exc
+
+
 class Settings:
     def __init__(self) -> None:
         self.openrouter_api_key = get_env("OPENROUTER_API_KEY")
@@ -30,6 +40,8 @@ class Settings:
         self.cors_allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
         default_models = "google/gemini-2.0-flash-exp:free,meta-llama/llama-3-8b-instruct:free"
         self.allowed_model_ids = parse_csv(os.getenv("ALLOWED_MODEL_IDS", default_models))
+        self.rate_limit_max_requests = get_env_int("RATE_LIMIT_MAX_REQUESTS", 60)
+        self.rate_limit_window_seconds = get_env_int("RATE_LIMIT_WINDOW_SECONDS", 60)
 
 
 settings = Settings()

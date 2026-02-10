@@ -49,83 +49,87 @@ export default function ChatApp({ session }: { session: Session }) {
   );
 
   const fetchWithRetry = useCallback(
-    async function fetchWithRetry(
-      url: string,
-      options: RequestInit,
-      retries = 1
-    ): Promise<Response> {
-      try {
-        return await fetch(url, options);
-      } catch (error) {
-        if (retries <= 0) {
-          throw error;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        return fetchWithRetry(url, options, retries - 1);
-      }
-    },
-    []
-  );
-
-  const loadConversations = useCallback(async () => {
-    try {
-      setApiError(null);
-      setIsLoadingConversations(true);
-      const response = await fetchWithRetry(`${apiBaseUrl}/api/conversations`, {
-        headers: authHeader,
-      });
-      if (!response.ok) {
-        return;
-      }
-      const data = (await response.json()) as Conversation[];
-      setConversations(data);
-      if (data.length) {
-        const storedId = localStorage.getItem(storageKey);
-        const storedConversation = storedId
-          ? data.find((item) => item.id === storedId)
-          : undefined;
-        if (!selectedConversationId && storedConversation) {
-          setSelectedConversationId(storedConversation.id);
-          setModelId(storedConversation.model_id || defaultModel);
-          return;
-        }
-        if (!selectedConversationId) {
-          setSelectedConversationId(data[0].id);
-          setModelId(data[0].model_id || defaultModel);
-        }
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to reach API";
-      setApiError(message);
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  }, [apiBaseUrl, authHeader, fetchWithRetry, selectedConversationId]);
-
-  const loadMessages = useCallback(
-    async (conversationId: string) => {
-      try {
-        setApiError(null);
-        setIsLoadingMessages(true);
-        const response = await fetchWithRetry(
-          `${apiBaseUrl}/api/conversations/${conversationId}/messages`,
-          { headers: authHeader }
-        );
-        if (!response.ok) {
-          return;
-        }
-        const data = (await response.json()) as Message[];
-        setMessages(data || []);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to reach API";
-        setApiError(message);
-      } finally {
-        setIsLoadingMessages(false);
-      }
-    },
-    [apiBaseUrl, authHeader, fetchWithRetry]
+    return (
+      <main className="min-h-screen text-[#0b0b0b]">
+        {apiError ? (
+          <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 shadow-[0_10px_30px_rgba(245,158,11,0.15)]">
+              <div className="flex items-center justify-between gap-2">
+                <span>
+                  API error: {apiError}. Check that the backend is running at
+                  {" "}
+                  {apiBaseUrl}.
+                </span>
+                <button
+                  className="rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px]"
+                  onClick={loadConversations}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 md:px-6">
+          <div className="flex min-h-[calc(100vh-3rem)] w-full overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.12)] backdrop-blur motion-safe:animate-[fadeIn_500ms_ease-out]">
+            <Sidebar
+              conversations={conversations}
+              selectedConversationId={selectedConversationId}
+              onSelectConversation={handleSelectConversation}
+              onDeleteConversation={handleDeleteConversation}
+              onNewConversation={handleNewConversation}
+              onSignOut={handleSignOut}
+              isLoading={isLoadingConversations}
+              isCreating={isCreatingConversation}
+              className="hidden md:block"
+              userEmail={session.user.email}
+            />
+            {isSidebarOpen ? (
+              <div
+                className="fixed inset-0 z-40 bg-black/40 md:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            ) : null}
+            <div
+              className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-white/90 backdrop-blur transition-transform md:hidden ${
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+              }`}
+            >
+              <Sidebar
+                conversations={conversations}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={handleSelectConversation}
+                onDeleteConversation={handleDeleteConversation}
+                onNewConversation={handleNewConversation}
+                onSignOut={handleSignOut}
+                isLoading={isLoadingConversations}
+                isCreating={isCreatingConversation}
+                showClose
+                onClose={() => setIsSidebarOpen(false)}
+                userEmail={session.user.email}
+              />
+            </div>
+            <ChatArea
+              title={chatTitle}
+              modelId={modelId}
+              onModelChange={setModelId}
+              messages={messages}
+              streamingMessage={streamingMessage}
+              inputValue={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              isStreaming={isStreaming}
+              isLoadingMessages={isLoadingMessages}
+              hasConversation={hasConversation}
+              canRename={Boolean(selectedConversationId)}
+              isRenaming={isRenamingConversation}
+              onRenameConversation={handleRenameConversation}
+              onOpenSidebar={() => setIsSidebarOpen(true)}
+            />
+          </div>
+        </div>
+      </main>
+    );
   );
 
   useEffect(() => {

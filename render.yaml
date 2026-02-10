@@ -19,6 +19,10 @@ services:
         value: https://chatbot-frontend-unb3.onrender.com,http://localhost:3000
       - key: ALLOWED_MODEL_IDS
         sync: false
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 60
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: 60
 
   - type: web
     name: chatbot-frontend

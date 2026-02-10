@@ -140,41 +140,57 @@ export default function AuthGate({
     if (!email) {
       setStatus("Enter your email to receive a reset link.");
       return;
-    }
-    setIsSubmitting(true);
+          <main className="flex min-h-screen items-center justify-center px-4 py-10 text-[#0b0b0b]">
+            <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm shadow-[0_12px_40px_rgba(15,23,42,0.12)] backdrop-blur">
+              Loading secure session...
+            </div>
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
     });
     setIsSubmitting(false);
     if (error) {
       setStatus(error.message);
-      handleRateLimit(error.message);
-    } else {
-      setStatus("Password reset link sent. Check your email.");
-      startCooldown(60);
-    }
-  };
-
-  const handleUpdatePassword = async () => {
-    setStatus(null);
-    if (!newPassword) {
-      setStatus("Enter a new password.");
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      setStatus("Passwords do not match.");
-      return;
-    }
-    setIsSubmitting(true);
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-    setIsSubmitting(false);
-    if (error) {
-      setStatus(error.message);
+          <main className="flex min-h-screen items-center justify-center px-4 py-10 text-[#0b0b0b]">
+            <div className="w-full max-w-md space-y-5 rounded-3xl border border-black/10 bg-white/80 p-6 shadow-[0_20px_70px_rgba(15,23,42,0.16)] backdrop-blur motion-safe:animate-[rise_600ms_ease-out]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-black/50">
+                    Orbit AI
+                  </p>
+                  <h1 className="text-2xl font-semibold">
+                    {mode === "signUp"
+                      ? "Create account"
+                      : mode === "forgot"
+                      ? "Reset password"
+                      : mode === "updatePassword"
+                      ? "Set new password"
+                      : "Sign in"}
+                  </h1>
+                  <p className="mt-1 text-sm text-black/60">
+                    {mode === "signUp"
+                      ? "Start chatting in seconds with your workspace."
+                      : mode === "forgot"
+                      ? "We will send a reset link to your inbox."
+                      : mode === "updatePassword"
+                      ? "Create a new password to secure your account."
+                      : "Welcome back. Pick up where you left off."}
+                  </p>
+                </div>
+                {mode !== "updatePassword" ? (
+                  <button
+                    className="rounded-full border border-black/10 px-3 py-1 text-[11px] text-black/70"
+                    onClick={() => {
+                      setStatus(null);
+                      setMode(mode === "signUp" ? "signIn" : "signUp");
+                    }}
+                  >
+                    {mode === "signUp" ? "Have an account?" : "Create account"}
+                  </button>
+                ) : null}
+              </div>
     } else {
       setStatus("Password updated. You can continue.");
-      setMode("signIn");
+                  className="w-full rounded-xl border border-black/15 bg-white/70 px-3 py-2.5 text-sm"
     }
   };
 
@@ -183,7 +199,7 @@ export default function AuthGate({
     if (cooldownSeconds > 0) {
       setStatus(`Please wait ${cooldownSeconds}s before trying again.`);
       return;
-    }
+                  className="w-full rounded-xl border border-black/15 bg-white/70 px-3 py-2.5 text-sm"
     setIsSubmitting(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -192,29 +208,24 @@ export default function AuthGate({
       },
     });
     setIsSubmitting(false);
-    if (error) {
+                  className="w-full rounded-xl border border-black/15 bg-white/70 px-3 py-2.5 text-sm"
       setStatus(error.message);
       handleRateLimit(error.message);
     } else {
       startCooldown(10);
     }
   };
-
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-white text-black">
-        <p className="text-sm">Loading session...</p>
       </main>
     );
   }
-
+                    className="w-full rounded-xl border border-black/15 bg-white/70 px-3 py-2.5 text-sm"
   if (!session || mode === "updatePassword") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white text-black">
         <div className="w-full max-w-sm space-y-4 rounded border border-black/10 p-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold">
-              {mode === "signUp"
+                    className="w-full rounded-xl border border-black/15 bg-white/70 px-3 py-2.5 text-sm"
                 ? "Create account"
                 : mode === "forgot"
                 ? "Reset password"
@@ -224,7 +235,7 @@ export default function AuthGate({
             </h1>
             {mode !== "updatePassword" ? (
               <button
-                className="text-xs text-black/60"
+                  className="w-full rounded-xl bg-[#0b0b0b] px-4 py-2.5 text-sm text-white shadow-[0_12px_30px_rgba(15,23,42,0.2)] disabled:bg-black/40"
                 onClick={() => {
                   setStatus(null);
                   setMode(mode === "signUp" ? "signIn" : "signUp");
@@ -233,7 +244,7 @@ export default function AuthGate({
                 {mode === "signUp" ? "Have an account?" : "Create account"}
               </button>
             ) : null}
-          </div>
+                  className="w-full rounded-xl bg-[#0b0b0b] px-4 py-2.5 text-sm text-white shadow-[0_12px_30px_rgba(15,23,42,0.2)] disabled:bg-black/40"
           {mode !== "updatePassword" ? (
             <input
               className="w-full rounded border border-black/20 px-3 py-2"
@@ -242,7 +253,7 @@ export default function AuthGate({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
-          ) : null}
+                  className="w-full rounded-xl border border-black/15 bg-white/70 px-4 py-2.5 text-sm text-black/80 disabled:text-black/40"
           {mode === "signIn" || mode === "signUp" ? (
             <input
               className="w-full rounded border border-black/20 px-3 py-2"
@@ -251,7 +262,7 @@ export default function AuthGate({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
-          ) : null}
+                  className="w-full rounded-xl bg-[#0b0b0b] px-4 py-2.5 text-sm text-white shadow-[0_12px_30px_rgba(15,23,42,0.2)] disabled:bg-black/40"
           {mode === "signUp" ? (
             <input
               className="w-full rounded border border-black/20 px-3 py-2"
@@ -260,7 +271,7 @@ export default function AuthGate({
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
             />
-          ) : null}
+                  className="w-full rounded-xl bg-[#0b0b0b] px-4 py-2.5 text-sm text-white shadow-[0_12px_30px_rgba(15,23,42,0.2)] disabled:bg-black/40"
           {mode === "forgot" ? (
             <p className="text-sm text-black/70">
               We will email you a reset link.
@@ -269,7 +280,7 @@ export default function AuthGate({
           {mode === "updatePassword" ? (
             <>
               <input
-                className="w-full rounded border border-black/20 px-3 py-2"
+                  className="text-left text-xs text-black/60"
                 placeholder="New password"
                 type="password"
                 value={newPassword}
@@ -278,7 +289,11 @@ export default function AuthGate({
               <input
                 className="w-full rounded border border-black/20 px-3 py-2"
                 placeholder="Confirm new password"
-                type="password"
+              {status ? (
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-xs text-black/70">
+                  {status}
+                </div>
+              ) : null}
                 value={confirmNewPassword}
                 onChange={(event) => setConfirmNewPassword(event.target.value)}
               />

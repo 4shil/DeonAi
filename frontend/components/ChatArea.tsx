@@ -57,12 +57,12 @@ export default function ChatArea({
   };
 
   return (
-    <section className="flex min-h-screen flex-1 flex-col">
-      <header className="border-b border-black/10 p-4">
-        <div className="flex items-center justify-between">
+    <section className="flex min-h-screen flex-1 flex-col bg-white/50">
+      <header className="border-b border-black/10 bg-white/70 p-4 backdrop-blur">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button
-              className="rounded border border-black/10 px-2 py-1 text-xs md:hidden"
+              className="rounded-full border border-black/10 bg-white/80 px-3 py-1 text-xs md:hidden"
               onClick={onOpenSidebar}
               aria-label="Open sidebar"
             >
@@ -70,7 +70,7 @@ export default function ChatArea({
             </button>
             {isEditingTitle ? (
               <input
-                className="rounded border border-black/20 px-2 py-1 text-sm"
+                className="rounded-xl border border-black/15 bg-white/80 px-3 py-1.5 text-sm"
                 value={draftTitle}
                 onChange={(event) => setDraftTitle(event.target.value)}
                 aria-label="Conversation title"
@@ -83,7 +83,7 @@ export default function ChatArea({
               isEditingTitle ? (
                 <div className="flex items-center gap-2 text-xs">
                   <button
-                    className="rounded border border-black/20 px-2 py-1"
+                    className="rounded-full border border-black/15 bg-white/80 px-3 py-1"
                     onClick={handleSaveTitle}
                     disabled={isRenaming}
                     aria-label="Save conversation title"
@@ -91,7 +91,7 @@ export default function ChatArea({
                     {isRenaming ? "Saving..." : "Save"}
                   </button>
                   <button
-                    className="rounded border border-black/10 px-2 py-1"
+                    className="rounded-full border border-black/10 px-3 py-1"
                     onClick={() => {
                       setDraftTitle(title);
                       setIsEditingTitle(false);
@@ -103,7 +103,7 @@ export default function ChatArea({
                 </div>
               ) : (
                 <button
-                  className="rounded border border-black/20 px-2 py-1 text-xs"
+                  className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs"
                   onClick={() => setIsEditingTitle(true)}
                   aria-label="Rename conversation"
                 >
@@ -113,7 +113,7 @@ export default function ChatArea({
             ) : null}
           </div>
           <select
-            className="rounded border border-black/20 px-2 py-1 text-sm"
+            className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs"
             value={modelId}
             onChange={(event) => onModelChange(event.target.value)}
             aria-label="Select model"
@@ -127,22 +127,20 @@ export default function ChatArea({
           </select>
         </div>
       </header>
-      <div className="flex-1 space-y-4 p-4" aria-live="polite">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4" aria-live="polite">
         {!hasConversation && !isLoadingMessages ? (
-          <div className="max-w-2xl rounded border border-black/10 p-3">
-            <p className="text-sm">
-              Start a new conversation from the sidebar.
-            </p>
+          <div className="max-w-2xl rounded-2xl border border-black/10 bg-white/80 p-4 text-sm">
+            Start a new conversation from the sidebar.
           </div>
         ) : null}
         {isLoadingMessages ? (
-          <div className="max-w-2xl rounded border border-black/10 p-3">
-            <p className="text-sm">Loading messages...</p>
+          <div className="max-w-2xl rounded-2xl border border-black/10 bg-white/80 p-4 text-sm">
+            Loading messages...
           </div>
         ) : null}
         {hasConversation && messages.length === 0 && !streamingMessage ? (
-          <div className="max-w-2xl rounded border border-black/10 p-3">
-            <p className="text-sm">Ask me anything to get started.</p>
+          <div className="max-w-2xl rounded-2xl border border-black/10 bg-white/80 p-4 text-sm">
+            Ask me anything to get started.
           </div>
         ) : null}
         {messages.map((message, index) => {
@@ -153,10 +151,10 @@ export default function ChatArea({
               className={`flex ${isUser ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-2xl rounded border p-3 text-sm ${
+                className={`max-w-2xl rounded-2xl border px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.1)] ${
                   isUser
                     ? "border-black bg-black text-white"
-                    : "border-black/10"
+                    : "border-black/10 bg-white/90"
                 }`}
               >
                 {message.content}
@@ -166,16 +164,16 @@ export default function ChatArea({
         })}
         {streamingMessage ? (
           <div className="flex justify-start">
-            <div className="max-w-2xl rounded border border-black/10 p-3 text-sm">
+            <div className="max-w-2xl rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.1)]">
               {streamingMessage}
             </div>
           </div>
         ) : null}
       </div>
-      <div className="border-t border-black/10 p-4">
+      <div className="border-t border-black/10 bg-white/80 p-4">
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded border border-black/20 px-3 py-2"
+            className="flex-1 rounded-xl border border-black/15 bg-white/80 px-3 py-2.5 text-sm"
             placeholder="Type a message..."
             value={inputValue}
             onChange={(event) => onInputChange(event.target.value)}
@@ -189,7 +187,7 @@ export default function ChatArea({
             maxLength={4000}
           />
           <button
-            className="rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
+            className="rounded-xl bg-[#ff6b00] px-4 py-2.5 text-sm text-black shadow-[0_10px_25px_rgba(255,107,0,0.35)] disabled:bg-black/40"
             onClick={onSend}
             disabled={isStreaming}
             aria-label="Send message"

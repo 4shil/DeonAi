@@ -34,15 +34,20 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`w-64 border-r border-black/10 bg-white p-4 ${
+      className={`w-72 border-r border-black/10 bg-white/70 p-4 backdrop-blur ${
         className ?? ""
       }`}
     >
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Chats</h1>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-black/40">
+            Workspace
+          </p>
+          <h1 className="text-lg font-semibold">Conversations</h1>
+        </div>
         <div className="flex items-center gap-2">
           <button
-            className="rounded border border-black/20 px-2 py-1 text-sm"
+            className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
             onClick={onNewConversation}
             disabled={isCreating}
             aria-label="Start a new conversation"
@@ -51,7 +56,7 @@ export default function Sidebar({
           </button>
           {showClose ? (
             <button
-              className="rounded border border-black/10 px-2 py-1 text-sm"
+              className="rounded-full border border-black/10 px-3 py-1 text-sm"
               onClick={onClose}
               aria-label="Close sidebar"
             >
@@ -62,12 +67,12 @@ export default function Sidebar({
       </div>
       <ul className="mt-4 space-y-2">
         {isLoading ? (
-          <li className="rounded border border-black/10 p-2 text-sm">
+          <li className="rounded-2xl border border-black/10 bg-white/80 p-3 text-sm">
             Loading conversations...
           </li>
         ) : null}
         {!isLoading && conversations.length === 0 ? (
-          <li className="rounded border border-black/10 p-2 text-sm">
+          <li className="rounded-2xl border border-black/10 bg-white/80 p-3 text-sm">
             No conversations yet. Start one with the New button.
           </li>
         ) : null}
@@ -76,8 +81,10 @@ export default function Sidebar({
           return (
             <li
               key={conversation.id}
-              className={`flex items-center justify-between rounded border p-2 text-sm ${
-                isSelected ? "border-black bg-black text-white" : "border-black/10"
+              className={`flex items-center justify-between rounded-2xl border p-3 text-sm transition ${
+                isSelected
+                  ? "border-black bg-black text-white shadow-[0_14px_30px_rgba(15,23,42,0.2)]"
+                  : "border-black/10 bg-white/80 hover:border-black/30"
               }`}
             >
               <button
@@ -89,7 +96,7 @@ export default function Sidebar({
               </button>
               <button
                 className={`ml-2 text-xs ${
-                  isSelected ? "text-white/70" : "text-black/60"
+                  isSelected ? "text-white/70" : "text-black/50"
                 }`}
                 onClick={() => onDeleteConversation(conversation.id)}
                 aria-label={`Delete conversation ${conversation.title || "Untitled"}`}
@@ -101,9 +108,11 @@ export default function Sidebar({
         })}
       </ul>
       <div className="mt-6 border-t border-black/10 pt-4 text-xs text-black/70">
-        {userEmail ? <p className="truncate">Signed in as {userEmail}</p> : null}
+        {userEmail ? (
+          <p className="truncate">Signed in as {userEmail}</p>
+        ) : null}
         <button
-          className="mt-2 rounded border border-black/20 px-2 py-1 text-xs"
+          className="mt-2 rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs"
           onClick={onSignOut}
           aria-label="Sign out"
         >
