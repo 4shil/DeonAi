@@ -12,7 +12,15 @@ export default function AuthGate({
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [mode, setMode] = useState<
+    "signIn" | "signUp" | "forgot" | "updatePassword"
+  >("signIn");
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,8 +33,11 @@ export default function AuthGate({
     loadSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_, newSession) => {
+      (event, newSession) => {
         setSession(newSession);
+        if (event === "PASSWORD_RECOVERY") {
+          setMode("updatePassword");
+        }
       }
     );
 
@@ -37,11 +48,79 @@ export default function AuthGate({
 
   const handleSignIn = async () => {
     setStatus(null);
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (!email || !password) {
+      setStatus("Enter your email and password.");
+      return;
+    }
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      setStatus(error.message);
+    }
+  };
+
+  const handleSignUp = async () => {
+    setStatus(null);
+    if (!email || !password) {
+      setStatus("Enter your email and password.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setStatus("Passwords do not match.");
+      return;
+    }
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    setIsSubmitting(false);
     if (error) {
       setStatus(error.message);
     } else {
-      setStatus("Check your email for the magic link.");
+      setStatus("Check your email to confirm your account.");
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setStatus(null);
+    if (!email) {
+      setStatus("Enter your email to receive a reset link.");
+      return;
+    }
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      setStatus(error.message);
+    } else {
+      setStatus("Password reset link sent. Check your email.");
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    setStatus(null);
+    if (!newPassword) {
+      setStatus("Enter a new password.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setStatus("Passwords do not match.");
+      return;
+    }
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      setStatus(error.message);
+    } else {
+      setStatus("Password updated. You can continue.");
+      setMode("signIn");
     }
   };
 
@@ -53,27 +132,129 @@ export default function AuthGate({
     );
   }
 
-  if (!session) {
+  if (!session || mode === "updatePassword") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white text-black">
         <div className="w-full max-w-sm space-y-4 rounded border border-black/10 p-6">
-          <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-sm text-black/70">
-            Use your email to receive a magic link.
-          </p>
-          <input
-            className="w-full rounded border border-black/20 px-3 py-2"
-            placeholder="you@example.com"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <button
-            className="w-full rounded bg-black px-4 py-2 text-white"
-            onClick={handleSignIn}
-          >
-            Send magic link
-          </button>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">
+              {mode === "signUp"
+                ? "Create account"
+                : mode === "forgot"
+                ? "Reset password"
+                : mode === "updatePassword"
+                ? "Set new password"
+                : "Sign in"}
+            </h1>
+            {mode !== "updatePassword" ? (
+              <button
+                className="text-xs text-black/60"
+                onClick={() => {
+                  setStatus(null);
+                  setMode(mode === "signUp" ? "signIn" : "signUp");
+                }}
+              >
+                {mode === "signUp" ? "Have an account?" : "Create account"}
+              </button>
+            ) : null}
+          </div>
+          {mode !== "updatePassword" ? (
+            <input
+              className="w-full rounded border border-black/20 px-3 py-2"
+              placeholder="you@example.com"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          ) : null}
+          {mode === "signIn" || mode === "signUp" ? (
+            <input
+              className="w-full rounded border border-black/20 px-3 py-2"
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          ) : null}
+          {mode === "signUp" ? (
+            <input
+              className="w-full rounded border border-black/20 px-3 py-2"
+              placeholder="Confirm password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+          ) : null}
+          {mode === "forgot" ? (
+            <p className="text-sm text-black/70">
+              We will email you a reset link.
+            </p>
+          ) : null}
+          {mode === "updatePassword" ? (
+            <>
+              <input
+                className="w-full rounded border border-black/20 px-3 py-2"
+                placeholder="New password"
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+              <input
+                className="w-full rounded border border-black/20 px-3 py-2"
+                placeholder="Confirm new password"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(event) => setConfirmNewPassword(event.target.value)}
+              />
+            </>
+          ) : null}
+          {mode === "signIn" ? (
+            <button
+              className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
+              onClick={handleSignIn}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign in"}
+            </button>
+          ) : null}
+          {mode === "signUp" ? (
+            <button
+              className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
+              onClick={handleSignUp}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating..." : "Create account"}
+            </button>
+          ) : null}
+          {mode === "forgot" ? (
+            <button
+              className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
+              onClick={handleForgotPassword}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Sending..." : "Send reset link"}
+            </button>
+          ) : null}
+          {mode === "updatePassword" ? (
+            <button
+              className="w-full rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
+              onClick={handleUpdatePassword}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Updating..." : "Update password"}
+            </button>
+          ) : null}
+          {mode !== "updatePassword" ? (
+            <button
+              className="text-left text-xs text-black/60"
+              onClick={() => {
+                setStatus(null);
+                setMode(mode === "forgot" ? "signIn" : "forgot");
+              }}
+            >
+              {mode === "forgot" ? "Back to sign in" : "Forgot password?"}
+            </button>
+          ) : null}
           {status ? <p className="text-xs text-black/70">{status}</p> : null}
         </div>
       </main>
