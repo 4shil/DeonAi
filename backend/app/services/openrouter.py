@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import AsyncIterator
 
 import httpx
 
 from app.core.config import settings
+
+logger = logging.getLogger("chatbot.openrouter")
 
 
 async def stream_chat(messages: list[dict[str, str]], model_id: str) -> AsyncIterator[str]:
@@ -23,6 +26,11 @@ async def stream_chat(messages: list[dict[str, str]], model_id: str) -> AsyncIte
         )
         if response.status_code >= 400:
             error_body = await response.aread()
+            logger.error(
+                "OpenRouter error: %s %s",
+                response.status_code,
+                error_body.decode("utf-8", "ignore"),
+            )
             raise RuntimeError(
                 f"OpenRouter error: {response.status_code} {error_body.decode('utf-8', 'ignore')}"
             )

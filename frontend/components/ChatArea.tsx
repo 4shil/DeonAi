@@ -74,6 +74,7 @@ export default function ChatArea({
                 value={draftTitle}
                 onChange={(event) => setDraftTitle(event.target.value)}
                 aria-label="Conversation title"
+                maxLength={120}
               />
             ) : (
               <h2 className="text-lg font-semibold">{title}</h2>
@@ -185,6 +186,7 @@ export default function ChatArea({
               }
             }}
             aria-label="Message input"
+            maxLength={4000}
           />
           <button
             className="rounded bg-black px-4 py-2 text-white disabled:bg-black/40"
