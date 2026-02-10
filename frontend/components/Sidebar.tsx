@@ -9,6 +9,8 @@ type SidebarProps = {
   onSelectConversation: (id: string) => void;
   onDeleteConversation: (id: string) => void;
   onNewConversation: () => void;
+  isLoading: boolean;
+  isCreating: boolean;
 };
 
 export default function Sidebar({
@@ -17,6 +19,8 @@ export default function Sidebar({
   onSelectConversation,
   onDeleteConversation,
   onNewConversation,
+  isLoading,
+  isCreating,
 }: SidebarProps) {
   return (
     <aside className="hidden w-64 border-r border-black/10 p-4 md:block">
@@ -25,14 +29,20 @@ export default function Sidebar({
         <button
           className="rounded border border-black/20 px-2 py-1 text-sm"
           onClick={onNewConversation}
+          disabled={isCreating}
         >
-          New
+          {isCreating ? "Creating..." : "New"}
         </button>
       </div>
       <ul className="mt-4 space-y-2">
-        {conversations.length === 0 ? (
+        {isLoading ? (
           <li className="rounded border border-black/10 p-2 text-sm">
-            No conversations yet
+            Loading conversations...
+          </li>
+        ) : null}
+        {!isLoading && conversations.length === 0 ? (
+          <li className="rounded border border-black/10 p-2 text-sm">
+            No conversations yet. Start one with the New button.
           </li>
         ) : null}
         {conversations.map((conversation) => {

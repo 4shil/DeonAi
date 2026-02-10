@@ -5,7 +5,6 @@ import type { Session } from "@supabase/supabase-js";
 
 import ChatArea from "./ChatArea";
 import Sidebar from "./Sidebar";
-import { supabase } from "../lib/supabaseClient";
 
 const defaultModel = "google/gemini-2.0-flash-exp:free";
 
@@ -26,6 +25,7 @@ type Message = {
 export default function ChatApp({ session }: { session: Session }) {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  const storageKey = "chatbot:selectedConversationId";
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -36,16 +36,40 @@ export default function ChatApp({ session }: { session: Session }) {
   const [modelId, setModelId] = useState(defaultModel);
   const [isStreaming, setIsStreaming] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [isRenamingConversation, setIsRenamingConversation] = useState(false);
 
   const authHeader = useMemo(
     () => ({ Authorization: `Bearer ${session.access_token}` }),
     [session.access_token]
   );
 
+  const fetchWithRetry = useCallback(
+    async function fetchWithRetry(
+      url: string,
+      options: RequestInit,
+      retries = 1
+    ): Promise<Response> {
+      try {
+        return await fetch(url, options);
+      } catch (error) {
+        if (retries <= 0) {
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return fetchWithRetry(url, options, retries - 1);
+      }
+    },
+    []
+  );
+
   const loadConversations = useCallback(async () => {
     try {
       setApiError(null);
-      const response = await fetch(`${apiBaseUrl}/api/conversations`, {
+      setIsLoadingConversations(true);
+      const response = await fetchWithRetry(`${apiBaseUrl}/api/conversations`, {
         headers: authHeader,
       });
       if (!response.ok) {
@@ -53,27 +77,53 @@ export default function ChatApp({ session }: { session: Session }) {
       }
       const data = (await response.json()) as Conversation[];
       setConversations(data);
-      if (!selectedConversationId && data.length) {
-        setSelectedConversationId(data[0].id);
-        setModelId(data[0].model_id || defaultModel);
+      if (data.length) {
+        const storedId = localStorage.getItem(storageKey);
+        const storedConversation = storedId
+          ? data.find((item) => item.id === storedId)
+          : undefined;
+        if (!selectedConversationId && storedConversation) {
+          setSelectedConversationId(storedConversation.id);
+          setModelId(storedConversation.model_id || defaultModel);
+          return;
+        }
+        if (!selectedConversationId) {
+          setSelectedConversationId(data[0].id);
+          setModelId(data[0].model_id || defaultModel);
+        }
       }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to reach API";
       setApiError(message);
+    } finally {
+      setIsLoadingConversations(false);
     }
-  }, [apiBaseUrl, authHeader, selectedConversationId]);
+  }, [apiBaseUrl, authHeader, fetchWithRetry, selectedConversationId]);
 
   const loadMessages = useCallback(
     async (conversationId: string) => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at");
-      setMessages((data as Message[]) || []);
+      try {
+        setApiError(null);
+        setIsLoadingMessages(true);
+        const response = await fetchWithRetry(
+          `${apiBaseUrl}/api/conversations/${conversationId}/messages`,
+          { headers: authHeader }
+        );
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as Message[];
+        setMessages(data || []);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to reach API";
+        setApiError(message);
+      } finally {
+        setIsLoadingMessages(false);
+      }
     },
-    []
+    [apiBaseUrl, authHeader, fetchWithRetry]
   );
 
   useEffect(() => {
@@ -88,6 +138,14 @@ export default function ChatApp({ session }: { session: Session }) {
     }
   }, [loadMessages, selectedConversationId]);
 
+  useEffect(() => {
+    if (selectedConversationId) {
+      localStorage.setItem(storageKey, selectedConversationId);
+    } else {
+      localStorage.removeItem(storageKey);
+    }
+  }, [selectedConversationId, storageKey]);
+
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
     const selected = conversations.find((item) => item.id === conversationId);
@@ -99,7 +157,7 @@ export default function ChatApp({ session }: { session: Session }) {
   const handleDeleteConversation = async (conversationId: string) => {
     try {
       setApiError(null);
-      await fetch(`${apiBaseUrl}/api/conversations/${conversationId}`, {
+      await fetchWithRetry(`${apiBaseUrl}/api/conversations/${conversationId}`, {
         method: "DELETE",
         headers: authHeader,
       });
@@ -117,10 +175,73 @@ export default function ChatApp({ session }: { session: Session }) {
     }
   };
 
-  const handleNewConversation = () => {
-    setSelectedConversationId(null);
-    setMessages([]);
-    setModelId(defaultModel);
+  const handleNewConversation = async () => {
+    if (isStreaming || isCreatingConversation) {
+      return;
+    }
+    try {
+      setApiError(null);
+      setIsCreatingConversation(true);
+      const response = await fetchWithRetry(`${apiBaseUrl}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          title: "New conversation",
+          model_id: modelId || defaultModel,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create conversation");
+      }
+      const data = (await response.json()) as Conversation;
+      setConversations((items) => [data, ...items]);
+      setSelectedConversationId(data.id);
+      setMessages([]);
+      setModelId(data.model_id || defaultModel);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reach API";
+      setApiError(message);
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
+  const handleRenameConversation = async (title: string) => {
+    if (!selectedConversationId) {
+      return;
+    }
+    try {
+      setApiError(null);
+      setIsRenamingConversation(true);
+      const response = await fetchWithRetry(
+        `${apiBaseUrl}/api/conversations/${selectedConversationId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeader,
+          },
+          body: JSON.stringify({ title }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to rename conversation");
+      }
+      const data = (await response.json()) as Conversation;
+      setConversations((items) =>
+        items.map((item) => (item.id === data.id ? { ...item, ...data } : item))
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reach API";
+      setApiError(message);
+    } finally {
+      setIsRenamingConversation(false);
+    }
   };
 
   const handleSend = async () => {
@@ -142,7 +263,7 @@ export default function ChatApp({ session }: { session: Session }) {
     let response: Response;
     try {
       setApiError(null);
-      response = await fetch(`${apiBaseUrl}/api/chat`, {
+      response = await fetchWithRetry(`${apiBaseUrl}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -159,6 +280,12 @@ export default function ChatApp({ session }: { session: Session }) {
         error instanceof Error ? error.message : "Failed to reach API";
       setApiError(message);
       setIsStreaming(false);
+      return;
+    }
+
+    if (!response.ok) {
+      setIsStreaming(false);
+      setApiError("Failed to start chat stream");
       return;
     }
 
@@ -195,6 +322,7 @@ export default function ChatApp({ session }: { session: Session }) {
           };
           if (data.error) {
             setIsStreaming(false);
+            setApiError(data.error);
             return;
           }
           if (data.token) {
@@ -224,11 +352,25 @@ export default function ChatApp({ session }: { session: Session }) {
     return current?.title || "New Conversation";
   }, [conversations, selectedConversationId]);
 
+  const hasConversation = Boolean(selectedConversationId);
+
   return (
     <main className="min-h-screen bg-white text-black">
       {apiError ? (
         <div className="border-b border-black/10 bg-amber-50 px-4 py-2 text-xs text-amber-900">
-          API error: {apiError}. Check that the backend is running at {apiBaseUrl}.
+          <div className="flex items-center justify-between gap-2">
+            <span>
+              API error: {apiError}. Check that the backend is running at
+              {" "}
+              {apiBaseUrl}.
+            </span>
+            <button
+              className="rounded border border-amber-200 bg-white px-2 py-1 text-[11px]"
+              onClick={loadConversations}
+            >
+              Retry
+            </button>
+          </div>
         </div>
       ) : null}
       <div className="flex min-h-screen">
@@ -238,6 +380,8 @@ export default function ChatApp({ session }: { session: Session }) {
           onSelectConversation={handleSelectConversation}
           onDeleteConversation={handleDeleteConversation}
           onNewConversation={handleNewConversation}
+          isLoading={isLoadingConversations}
+          isCreating={isCreatingConversation}
         />
         <ChatArea
           title={chatTitle}
@@ -249,6 +393,11 @@ export default function ChatApp({ session }: { session: Session }) {
           onInputChange={setInput}
           onSend={handleSend}
           isStreaming={isStreaming}
+          isLoadingMessages={isLoadingMessages}
+          hasConversation={hasConversation}
+          canRename={hasConversation}
+          isRenaming={isRenamingConversation}
+          onRenameConversation={handleRenameConversation}
         />
       </div>
     </main>
