@@ -3,7 +3,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.api.models import ChatRequest
+from app.api.models import ChatRequest, UpdateConversationRequest
 from app.core.auth import get_auth_context
 from app.db.supabase import get_user_supabase_client
 from app.services.openrouter import stream_chat
@@ -105,6 +105,42 @@ def list_conversations(
         .execute()
     )
     return response.data or []
+
+
+@router.get("/conversations/{conversation_id}/messages")
+def list_messages(
+    conversation_id: str,
+    auth_context: tuple[str, str] = Depends(get_auth_context),
+):
+    _, access_token = auth_context
+    supabase = get_user_supabase_client(access_token)
+    response = (
+        supabase.table("messages")
+        .select("id, role, content, created_at")
+        .eq("conversation_id", conversation_id)
+        .order("created_at")
+        .execute()
+    )
+    return response.data or []
+
+
+@router.patch("/conversations/{conversation_id}")
+def update_conversation(
+    conversation_id: str,
+    payload: UpdateConversationRequest,
+    auth_context: tuple[str, str] = Depends(get_auth_context),
+):
+    _, access_token = auth_context
+    supabase = get_user_supabase_client(access_token)
+    response = (
+        supabase.table("conversations")
+        .update({"title": payload.title.strip()})
+        .eq("id", conversation_id)
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return response.data[0]
 
 
 @router.delete("/conversations/{conversation_id}")
