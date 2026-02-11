@@ -1,31 +1,29 @@
 services:
   - type: web
-    name: chatbot-backend
+    name: deonai-backend
     runtime: python
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
     envVars:
-      - key: OPENROUTER_API_KEY
-        sync: true
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
+      - key: OPENROUTER_API_KEY
+        value: ""
       - key: CORS_ALLOW_ORIGINS
-        value: https://chatbot-frontend-unb3.onrender.com,http://localhost:3000
-      - key: ALLOWED_MODEL_IDS
-        value: gpt-4,gpt-3.5-turbo,mistral,samba-24b
+        value: https://deonai-frontend.onrender.com,http://localhost:3000
       - key: RATE_LIMIT_MAX_REQUESTS
         value: 100
       - key: RATE_LIMIT_WINDOW_SECONDS
         value: 60
 
   - type: web
-    name: chatbot-frontend
+    name: deonai-frontend
     runtime: node
     plan: free
     rootDir: frontend
@@ -37,4 +35,4 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
       - key: NEXT_PUBLIC_API_BASE_URL
-        value: https://chatbot-backend-rwrg.onrender.com
+        value: https://deonai-backend.onrender.com
