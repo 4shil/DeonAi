@@ -15,8 +15,8 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "Simple AI Chatbot",
-  description: "Minimalist AI chatbot with streaming responses",
+  title: "DeonAI - Intelligent Assistant",
+  description: "Modern AI chatbot with dynamic model selection",
 };
 
 export default function RootLayout({
