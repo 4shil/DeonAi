@@ -43,6 +43,10 @@ async def fetch_models(api_key: str) -> list[dict]:
 async def stream_chat(messages: list[dict[str, str]], model_id: str, api_key: str | None = None) -> AsyncIterator[str]:
     # Use user-provided API key if available, otherwise fall back to server key
     key = api_key or settings.openrouter_api_key
+    
+    if not key:
+        raise RuntimeError("No API key provided. Please set your OpenRouter API key in settings.")
+    
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
@@ -53,36 +57,48 @@ async def stream_chat(messages: list[dict[str, str]], model_id: str, api_key: st
         "stream": True,
     }
 
-    async with httpx.AsyncClient(timeout=None) as client:
-        response = await client.post(
-            settings.openrouter_api_url, headers=headers, json=payload
-        )
-        if response.status_code >= 400:
-            error_body = await response.aread()
-            logger.error(
-                "OpenRouter error: %s %s",
-                response.status_code,
-                error_body.decode("utf-8", "ignore"),
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            response = await client.post(
+                settings.openrouter_api_url, headers=headers, json=payload
             )
-            raise RuntimeError(
-                f"OpenRouter error: {response.status_code} {error_body.decode('utf-8', 'ignore')}"
-            )
+            if response.status_code >= 400:
+                error_body = await response.aread()
+                error_text = error_body.decode("utf-8", "ignore")
+                logger.error(
+                    "OpenRouter error: %s %s",
+                    response.status_code,
+                    error_text,
+                )
+                
+                # Parse error for better user message
+                if response.status_code == 401:
+                    raise RuntimeError("Invalid API key. Please check your OpenRouter API key.")
+                elif response.status_code == 402:
+                    raise RuntimeError("Insufficient credits. Please add credits to your OpenRouter account.")
+                elif response.status_code == 429:
+                    raise RuntimeError("Rate limit exceeded. Please try again later.")
+                else:
+                    raise RuntimeError(f"OpenRouter error ({response.status_code}): {error_text}")
 
-        async for line in response.aiter_lines():
-            if not line or not line.startswith("data: "):
-                continue
-            data = line.removeprefix("data: ").strip()
-            if data == "[DONE]":
-                break
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                continue
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
+                data = line.removeprefix("data: ").strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    payload = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
 
-            choices = payload.get("choices") or []
-            if not choices:
-                continue
-            delta = choices[0].get("delta") or {}
-            token = delta.get("content")
-            if token:
-                yield token
+                choices = payload.get("choices") or []
+                if not choices:
+                    continue
+                delta = choices[0].get("delta") or {}
+                token = delta.get("content")
+                if token:
+                    yield token
+    except httpx.RequestError as e:
+        logger.error("Network error connecting to OpenRouter: %s", str(e))
+        raise RuntimeError(f"Network error: Unable to connect to OpenRouter. {str(e)}")
