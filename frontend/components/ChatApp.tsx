@@ -429,7 +429,7 @@ export default function ChatApp({ session }: { session: Session }) {
   const hasConversation = Boolean(selectedConversationId);
 
   return (
-    <main className="min-h-screen text-[#0b0b0b]">
+    <main className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {showApiKeyModal && (
         <ApiKeyModal
           onSave={handleSaveApiKey}
@@ -438,17 +438,24 @@ export default function ChatApp({ session }: { session: Session }) {
         />
       )}
       {apiError ? (
-        <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 shadow-[0_10px_30px_rgba(245,158,11,0.15)]">
-            <div className="flex items-center justify-between gap-2">
-              <span>
-                API error: {apiError}. Check that the backend is running at
-                {" "}
-                {apiBaseUrl}.
-              </span>
+        <div className="absolute left-1/2 top-4 z-40 w-full max-w-2xl -translate-x-1/2 px-4">
+          <div className="animate-[slideDown_300ms_ease-out] rounded-2xl border border-red-200 bg-red-50 px-5 py-4 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
+                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="mb-1 text-sm font-semibold text-red-900">Connection Error</h4>
+                <p className="text-xs text-red-700">
+                  {apiError}. Please check that the backend is running at{" "}
+                  <code className="rounded bg-red-100 px-1 py-0.5 font-mono text-xs">{apiBaseUrl}</code>
+                </p>
+              </div>
               <button
-                className="rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px]"
                 onClick={loadConversations}
+                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-all hover:bg-red-50 active:scale-95"
               >
                 Retry
               </button>
@@ -456,8 +463,30 @@ export default function ChatApp({ session }: { session: Session }) {
           </div>
         </div>
       ) : null}
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 md:px-6">
-        <div className="flex min-h-[calc(100vh-3rem)] w-full overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-[0_25px_70px_rgba(15,23,42,0.12)] backdrop-blur motion-safe:animate-[fadeIn_500ms_ease-out]">
+      <div className="flex h-full w-full overflow-hidden">
+        <Sidebar
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={handleSelectConversation}
+          onDeleteConversation={handleDeleteConversation}
+          onNewConversation={handleNewConversation}
+          onSignOut={handleSignOut}
+          isLoading={isLoadingConversations}
+          isCreating={isCreatingConversation}
+          className="hidden lg:flex"
+          userEmail={session.user.email}
+        />
+        {isSidebarOpen ? (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        ) : null}
+        <div
+          className={`fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out lg:hidden ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
           <Sidebar
             conversations={conversations}
             selectedConversationId={selectedConversationId}
@@ -467,55 +496,31 @@ export default function ChatApp({ session }: { session: Session }) {
             onSignOut={handleSignOut}
             isLoading={isLoadingConversations}
             isCreating={isCreatingConversation}
-            className="hidden md:block"
+            showClose
+            onClose={() => setIsSidebarOpen(false)}
             userEmail={session.user.email}
           />
-          {isSidebarOpen ? (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
-              onClick={() => setIsSidebarOpen(false)}
-            />
-          ) : null}
-          <div
-            className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-white/90 backdrop-blur transition-transform md:hidden ${
-              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-          >
-            <Sidebar
-              conversations={conversations}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={handleSelectConversation}
-              onDeleteConversation={handleDeleteConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              isLoading={isLoadingConversations}
-              isCreating={isCreatingConversation}
-              showClose
-              onClose={() => setIsSidebarOpen(false)}
-              userEmail={session.user.email}
-            />
-          </div>
-          <ChatArea
-            title={chatTitle}
-            modelId={modelId}
-            onModelChange={setModelId}
-            messages={messages}
-            streamingMessage={streamingMessage}
-            inputValue={input}
-            onInputChange={setInput}
-            onSend={handleSend}
-            isStreaming={isStreaming}
-            isLoadingMessages={isLoadingMessages}
-            hasConversation={hasConversation}
-            canRename={Boolean(selectedConversationId)}
-            isRenaming={isRenamingConversation}
-            onRenameConversation={handleRenameConversation}
-            onOpenSidebar={() => setIsSidebarOpen(true)}
-            availableModels={availableModels}
-            isLoadingModels={isLoadingModels}
-            onOpenApiKeySettings={() => setShowApiKeyModal(true)}
-          />
         </div>
+        <ChatArea
+          title={chatTitle}
+          modelId={modelId}
+          onModelChange={setModelId}
+          messages={messages}
+          streamingMessage={streamingMessage}
+          inputValue={input}
+          onInputChange={setInput}
+          onSend={handleSend}
+          isStreaming={isStreaming}
+          isLoadingMessages={isLoadingMessages}
+          hasConversation={hasConversation}
+          canRename={Boolean(selectedConversationId)}
+          isRenaming={isRenamingConversation}
+          onRenameConversation={handleRenameConversation}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+          availableModels={availableModels}
+          isLoadingModels={isLoadingModels}
+          onOpenApiKeySettings={() => setShowApiKeyModal(true)}
+        />
       </div>
     </main>
   );
