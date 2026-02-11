@@ -1,21 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 
-export default function AuthGate() {
+export default function AuthGate({
+  children,
+}: {
+  children: (session: Session) => React.ReactNode;
+}) {
+  const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setLoading(false);
+    };
+
+    loadSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       if (isSignUp) {
@@ -32,9 +59,24 @@ export default function AuthGate() {
     } catch (err: any) {
       setError(err.message || "Authentication failed");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="flex items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+          <span className="font-light tracking-wide text-white/60">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (session) {
+    return <>{children(session)}</>;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black p-4">
@@ -125,10 +167,10 @@ export default function AuthGate() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               className="w-full rounded-2xl border border-white/30 bg-white/20 px-4 py-4 font-light tracking-widest text-sm backdrop-blur-xl transition-all duration-300 hover:border-white/40 hover:bg-white/30 active:scale-95 disabled:border-white/10 disabled:bg-white/5 disabled:opacity-40"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <div className="flex items-center justify-center gap-3">
                   <div className="h-4 w-4 animate-spin rounded-full border border-white/20 border-t-white"></div>
                   <span>{isSignUp ? "CREATING..." : "SIGNING IN..."}</span>
