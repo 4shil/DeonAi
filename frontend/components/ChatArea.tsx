@@ -51,6 +51,7 @@ export default function ChatArea({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     setDraftTitle(title);
@@ -59,6 +60,14 @@ export default function ChatArea({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingMessage]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   const handleSaveTitle = async () => {
     const nextTitle = draftTitle.trim();
@@ -70,20 +79,28 @@ export default function ChatArea({
   };
 
   return (
-    <section className="flex h-screen flex-1 flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* Header */}
-      <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-4 py-3 sm:px-6">
-          <div className="flex items-center justify-between gap-3">
+    <section className="relative flex h-screen flex-1 flex-col overflow-hidden bg-black text-white">
+      {/* Animated gradient background */}
+      <div 
+        className="pointer-events-none absolute inset-0 opacity-20 blur-3xl"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.3), transparent 60%)`
+        }}
+      />
+
+      {/* Header - Minimal & Clean */}
+      <header className="relative z-10 border-b border-white/5 bg-black/40 backdrop-blur-2xl">
+        <div className="mx-auto max-w-5xl px-6 py-4">
+          <div className="flex items-center justify-between">
             {/* Left: Menu & Title */}
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
               <button
                 onClick={onOpenSidebar}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 lg:hidden"
+                className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 lg:hidden"
                 aria-label="Open sidebar"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
 
@@ -93,40 +110,40 @@ export default function ChatArea({
                     type="text"
                     value={draftTitle}
                     onChange={(e) => setDraftTitle(e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="flex-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm font-light tracking-wide backdrop-blur-xl placeholder:text-white/40 focus:border-white/40 focus:bg-white/10 focus:outline-none"
                     maxLength={120}
                     autoFocus
                   />
                   <button
                     onClick={handleSaveTitle}
                     disabled={isRenaming}
-                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs font-light tracking-wider backdrop-blur-xl transition-all hover:bg-white/10 disabled:opacity-40"
                   >
-                    {isRenaming ? "..." : "Save"}
+                    {isRenaming ? "..." : "SAVE"}
                   </button>
                   <button
                     onClick={() => {
                       setDraftTitle(title);
                       setIsEditingTitle(false);
                     }}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50"
+                    className="text-xs font-light tracking-wider text-white/60 transition-colors hover:text-white"
                   >
-                    Cancel
+                    CANCEL
                   </button>
                 </div>
               ) : (
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <h1 className="truncate text-sm font-semibold text-slate-900 sm:text-base">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <h1 className="truncate font-light tracking-wide text-white/90">
                     {title}
                   </h1>
                   {canRename && (
                     <button
                       onClick={() => setIsEditingTitle(true)}
-                      className="flex-shrink-0 text-slate-400 transition-colors hover:text-slate-600"
+                      className="group flex-shrink-0 opacity-40 transition-all duration-300 hover:opacity-100"
                       aria-label="Edit title"
                     >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg className="h-4 w-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
                   )}
@@ -138,33 +155,33 @@ export default function ChatArea({
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenApiKeySettings}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 active:scale-95"
+                className="group flex h-10 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10"
                 aria-label="API Settings"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                <svg className="h-4 w-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
-                <span className="hidden sm:inline">Key</span>
+                <span className="hidden text-xs font-light tracking-wider sm:inline">KEY</span>
               </button>
 
               <select
                 value={modelId}
                 onChange={(e) => onModelChange(e.target.value)}
                 disabled={isLoadingModels}
-                className="h-9 max-w-[140px] truncate rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 sm:max-w-[200px]"
+                className="h-10 max-w-[160px] truncate rounded-full border border-white/10 bg-white/5 px-4 text-xs font-light tracking-wide backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 focus:border-white/30 focus:bg-white/10 focus:outline-none disabled:opacity-40"
               >
                 {isLoadingModels ? (
                   <option>Loading...</option>
                 ) : availableModels.length > 0 ? (
                   availableModels.map((model) => (
-                    <option key={model.id} value={model.id}>
+                    <option key={model.id} value={model.id} className="bg-black">
                       {model.name}
                     </option>
                   ))
                 ) : (
                   <>
-                    <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash</option>
-                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B</option>
+                    <option value="google/gemini-2.0-flash-exp:free" className="bg-black">Gemini 2.0</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free" className="bg-black">Llama 3</option>
                   </>
                 )}
               </select>
@@ -174,61 +191,62 @@ export default function ChatArea({
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+      <div className="relative z-10 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-6 py-12">
           {!hasConversation && !isLoadingMessages ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="max-w-md text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600">
-                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <div className="flex h-full min-h-[60vh] items-center justify-center">
+              <div className="max-w-xl text-center">
+                <div className="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 backdrop-blur-xl">
+                  <svg className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-xl font-bold text-slate-900">Start a conversation</h2>
-                <p className="text-sm text-slate-500">Select a conversation from the sidebar or create a new one</p>
+                <h2 className="mb-3 font-light text-2xl tracking-wide text-white/90">Start a conversation</h2>
+                <p className="font-light text-sm tracking-wide text-white/40">Select or create a new chat from the sidebar</p>
               </div>
             </div>
           ) : null}
 
           {isLoadingMessages ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-3 rounded-xl bg-white px-6 py-3 shadow-sm">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"></div>
-                <span className="text-sm text-slate-600">Loading messages...</span>
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3 backdrop-blur-xl">
+                <div className="h-5 w-5 animate-spin rounded-full border border-white/20 border-t-white"></div>
+                <span className="text-sm font-light tracking-wide text-white/60">Loading...</span>
               </div>
             </div>
           ) : null}
 
           {hasConversation && messages.length === 0 && !streamingMessage && !isLoadingMessages ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="max-w-md text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600">
-                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <div className="flex h-full min-h-[60vh] items-center justify-center">
+              <div className="max-w-xl text-center">
+                <div className="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 backdrop-blur-xl">
+                  <svg className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-xl font-bold text-slate-900">Ready to chat!</h2>
-                <p className="text-sm text-slate-500">Ask me anything to get started</p>
+                <h2 className="mb-3 font-light text-2xl tracking-wide text-white/90">Ready</h2>
+                <p className="font-light text-sm tracking-wide text-white/40">Ask me anything</p>
               </div>
             </div>
           ) : null}
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {messages.map((message, index) => {
               const isUser = message.role === "user";
               return (
                 <div
                   key={`${message.role}-${index}`}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                  className={`group flex animate-[fadeIn_600ms_ease-out] ${isUser ? "justify-end" : "justify-start"}`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div
-                    className={`group relative max-w-[85%] rounded-2xl px-4 py-3 shadow-sm transition-all sm:max-w-[75%] ${
+                    className={`relative max-w-[85%] transition-all duration-500 sm:max-w-[75%] ${
                       isUser
-                        ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white"
-                        : "border border-slate-200 bg-white text-slate-800"
+                        ? "rounded-3xl border border-white/10 bg-white/5 px-6 py-4 backdrop-blur-xl"
+                        : "rounded-3xl border border-white/5 bg-white/[0.02] px-6 py-4 backdrop-blur-xl"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed sm:text-base">
+                    <p className="whitespace-pre-wrap font-light leading-relaxed tracking-wide text-white/80">
                       {message.content}
                     </p>
                   </div>
@@ -237,15 +255,15 @@ export default function ChatArea({
             })}
 
             {streamingMessage ? (
-              <div className="flex justify-start">
-                <div className="group relative max-w-[85%] rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:max-w-[75%]">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 sm:text-base">
+              <div className="flex animate-[fadeIn_400ms_ease-out] justify-start">
+                <div className="relative max-w-[85%] rounded-3xl border border-white/5 bg-white/[0.02] px-6 py-4 backdrop-blur-xl sm:max-w-[75%]">
+                  <p className="whitespace-pre-wrap font-light leading-relaxed tracking-wide text-white/80">
                     {streamingMessage}
                   </p>
-                  <div className="mt-2 flex items-center gap-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: "0ms" }}></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: "150ms" }}></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: "300ms" }}></div>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/60" style={{ animationDelay: "0ms" }}></div>
+                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/60" style={{ animationDelay: "200ms" }}></div>
+                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/60" style={{ animationDelay: "400ms" }}></div>
                   </div>
                 </div>
               </div>
@@ -257,9 +275,9 @@ export default function ChatArea({
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
-          <div className="flex items-end gap-2">
+      <div className="relative z-10 border-t border-white/5 bg-black/40 backdrop-blur-2xl">
+        <div className="mx-auto max-w-5xl px-6 py-6">
+          <div className="flex items-end gap-3">
             <div className="relative flex-1">
               <textarea
                 value={inputValue}
@@ -270,24 +288,24 @@ export default function ChatArea({
                     onSend();
                   }
                 }}
-                placeholder="Type your message..."
+                placeholder="Message..."
                 disabled={isStreaming}
                 rows={1}
-                className="max-h-32 min-h-[44px] w-full resize-none rounded-2xl border border-slate-300 bg-white px-4 py-3 pr-12 text-sm text-slate-900 placeholder-slate-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                className="max-h-32 min-h-[52px] w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-5 py-4 font-light tracking-wide text-white/90 backdrop-blur-xl placeholder:text-white/30 focus:border-white/20 focus:bg-white/10 focus:outline-none disabled:opacity-40"
                 style={{ fieldSizing: "content" } as any}
               />
             </div>
             <button
               onClick={onSend}
               disabled={isStreaming || !inputValue.trim()}
-              className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:shadow-blue-500/30 active:scale-95 disabled:from-slate-300 disabled:to-slate-400 disabled:shadow-none"
+              className="group flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl transition-all duration-300 hover:border-white/40 hover:bg-white/20 active:scale-95 disabled:border-white/5 disabled:bg-white/5 disabled:opacity-40"
               aria-label="Send message"
             >
               {isStreaming ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                <div className="h-5 w-5 animate-spin rounded-full border border-white/20 border-t-white"></div>
               ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <svg className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               )}
             </button>

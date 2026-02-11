@@ -429,7 +429,7 @@ export default function ChatApp({ session }: { session: Session }) {
   const hasConversation = Boolean(selectedConversationId);
 
   return (
-    <main className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <main className="flex h-screen overflow-hidden bg-black">
       {showApiKeyModal && (
         <ApiKeyModal
           onSave={handleSaveApiKey}
@@ -438,26 +438,25 @@ export default function ChatApp({ session }: { session: Session }) {
         />
       )}
       {apiError ? (
-        <div className="absolute left-1/2 top-4 z-40 w-full max-w-2xl -translate-x-1/2 px-4">
-          <div className="animate-[slideDown_300ms_ease-out] rounded-2xl border border-red-200 bg-red-50 px-5 py-4 shadow-xl">
+        <div className="absolute left-1/2 top-6 z-40 w-full max-w-2xl -translate-x-1/2 px-4">
+          <div className="animate-[slideDown_300ms_ease-out] rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 backdrop-blur-2xl">
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
-                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10">
+                <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h4 className="mb-1 text-sm font-semibold text-red-900">Connection Error</h4>
-                <p className="text-xs text-red-700">
-                  {apiError}. Please check that the backend is running at{" "}
-                  <code className="rounded bg-red-100 px-1 py-0.5 font-mono text-xs">{apiBaseUrl}</code>
+                <h4 className="mb-1 text-sm font-light tracking-wide text-red-300">Connection Error</h4>
+                <p className="text-xs font-light tracking-wide text-red-400/80">
+                  {apiError}. Backend: <code className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono">{apiBaseUrl}</code>
                 </p>
               </div>
               <button
                 onClick={loadConversations}
-                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-all hover:bg-red-50 active:scale-95"
+                className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-light tracking-wider text-red-300 transition-all hover:bg-red-500/20"
               >
-                Retry
+                RETRY
               </button>
             </div>
           </div>
@@ -478,7 +477,7 @@ export default function ChatApp({ session }: { session: Session }) {
         />
         {isSidebarOpen ? (
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         ) : null}
