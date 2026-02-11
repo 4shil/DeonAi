@@ -5,9 +5,11 @@ import type { Session } from "@supabase/supabase-js";
 
 import ChatArea from "./ChatArea";
 import Sidebar from "./Sidebar";
+import ApiKeyModal from "./ApiKeyModal";
 import { supabase } from "../lib/supabaseClient";
 
 const defaultModel = "google/gemini-2.0-flash-exp:free";
+const API_KEY_STORAGE_KEY = "chatbot:openrouter_api_key";
 
 type Conversation = {
   id: string;
@@ -42,11 +44,74 @@ export default function ChatApp({ session }: { session: Session }) {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [isRenamingConversation, setIsRenamingConversation] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [availableModels, setAvailableModels] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   const authHeader = useMemo(
     () => ({ Authorization: `Bearer ${session.access_token}` }),
     [session.access_token]
   );
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (stored) {
+      setApiKey(stored);
+    } else {
+      setShowApiKeyModal(true);
+    }
+  }, []);
+
+  // Load models when API key changes
+  useEffect(() => {
+    if (apiKey) {
+      loadModels();
+    }
+  }, [apiKey]);
+
+  const loadModels = async () => {
+    if (!apiKey) return;
+    
+    try {
+      setIsLoadingModels(true);
+      const response = await fetchWithRetry(`${apiBaseUrl}/api/models`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ api_key: apiKey }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.models.map((m: any) => ({
+          id: m.id,
+          name: m.name || m.id,
+        }));
+        setAvailableModels(models);
+      }
+    } catch (error) {
+      console.error("Failed to load models:", error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const handleSaveApiKey = (key: string) => {
+    localStorage.setItem(API_KEY_STORAGE_KEY, key);
+    setApiKey(key);
+    setShowApiKeyModal(false);
+  };
+
+  const handleCancelApiKey = () => {
+    if (!apiKey) {
+      // If no key exists, show a warning that they need one
+      alert("An API key is required to use the chat.");
+    }
+    setShowApiKeyModal(false);
+  };
 
   const fetchWithRetry = useCallback(
     async function fetchWithRetry(
@@ -281,6 +346,7 @@ export default function ChatApp({ session }: { session: Session }) {
           message: userMessage.content,
           model_id: modelId,
           conversation_id: selectedConversationId,
+          api_key: apiKey,
         }),
       });
     } catch (error) {
@@ -364,6 +430,13 @@ export default function ChatApp({ session }: { session: Session }) {
 
   return (
     <main className="min-h-screen text-[#0b0b0b]">
+      {showApiKeyModal && (
+        <ApiKeyModal
+          onSave={handleSaveApiKey}
+          onCancel={handleCancelApiKey}
+          currentKey={apiKey || undefined}
+        />
+      )}
       {apiError ? (
         <div className="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 shadow-[0_10px_30px_rgba(245,158,11,0.15)]">
@@ -438,6 +511,9 @@ export default function ChatApp({ session }: { session: Session }) {
             isRenaming={isRenamingConversation}
             onRenameConversation={handleRenameConversation}
             onOpenSidebar={() => setIsSidebarOpen(true)}
+            availableModels={availableModels}
+            isLoadingModels={isLoadingModels}
+            onOpenApiKeySettings={() => setShowApiKeyModal(true)}
           />
         </div>
       </div>

@@ -9,9 +9,42 @@ from app.core.config import settings
 logger = logging.getLogger("chatbot.openrouter")
 
 
-async def stream_chat(messages: list[dict[str, str]], model_id: str) -> AsyncIterator[str]:
+async def fetch_models(api_key: str) -> list[dict]:
+    """Fetch available models from OpenRouter"""
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            response = await client.get(
+                "https://openrouter.ai/api/v1/models",
+                headers=headers
+            )
+            if response.status_code >= 400:
+                error_body = await response.aread()
+                logger.error(
+                    "OpenRouter models fetch error: %s %s",
+                    response.status_code,
+                    error_body.decode("utf-8", "ignore"),
+                )
+                raise RuntimeError(
+                    f"OpenRouter error: {response.status_code} {error_body.decode('utf-8', 'ignore')}"
+                )
+            
+            data = response.json()
+            return data.get("data", [])
+        except Exception as e:
+            logger.error("Failed to fetch models from OpenRouter: %s", str(e))
+            raise
+
+
+async def stream_chat(messages: list[dict[str, str]], model_id: str, api_key: str | None = None) -> AsyncIterator[str]:
+    # Use user-provided API key if available, otherwise fall back to server key
+    key = api_key or settings.openrouter_api_key
+    headers = {
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
     payload = {

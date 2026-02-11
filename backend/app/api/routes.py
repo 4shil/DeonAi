@@ -6,11 +6,12 @@ from fastapi.responses import StreamingResponse
 from app.api.models import (
     ChatRequest,
     CreateConversationRequest,
+    ModelsRequest,
     UpdateConversationRequest,
 )
 from app.core.auth import get_auth_context
 from app.db.supabase import get_user_supabase_client
-from app.services.openrouter import stream_chat
+from app.services.openrouter import fetch_models, stream_chat
 
 router = APIRouter()
 
@@ -69,7 +70,7 @@ async def chat(
     async def event_stream():
         assistant_chunks: list[str] = []
         try:
-            async for token in stream_chat(messages, payload.model_id):
+            async for token in stream_chat(messages, payload.model_id, payload.api_key):
                 assistant_chunks.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
         except Exception as exc:
@@ -180,3 +181,13 @@ def delete_conversation(
     supabase = get_user_supabase_client(access_token)
     supabase.table("conversations").delete().eq("id", conversation_id).execute()
     return {"deleted": True}
+
+
+@router.post("/models")
+async def get_models(payload: ModelsRequest):
+    """Fetch available models from OpenRouter using user's API key"""
+    try:
+        models = await fetch_models(payload.api_key)
+        return {"models": models}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))

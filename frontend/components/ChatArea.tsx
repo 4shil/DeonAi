@@ -21,6 +21,9 @@ type ChatAreaProps = {
   isRenaming: boolean;
   onRenameConversation: (title: string) => Promise<void> | void;
   onOpenSidebar: () => void;
+  availableModels: Array<{ id: string; name: string }>;
+  isLoadingModels: boolean;
+  onOpenApiKeySettings: () => void;
 };
 
 export default function ChatArea({
@@ -39,6 +42,9 @@ export default function ChatArea({
   isRenaming,
   onRenameConversation,
   onOpenSidebar,
+  availableModels,
+  isLoadingModels,
+  onOpenApiKeySettings,
 }: ChatAreaProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
@@ -112,19 +118,42 @@ export default function ChatArea({
               )
             ) : null}
           </div>
-          <select
-            className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs"
-            value={modelId}
-            onChange={(event) => onModelChange(event.target.value)}
-            aria-label="Select model"
-          >
-            <option value="google/gemini-2.0-flash-exp:free">
-              gemini-2.0-flash-exp:free
-            </option>
-            <option value="meta-llama/llama-3-8b-instruct:free">
-              llama-3-8b-instruct:free
-            </option>
-          </select>
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs hover:bg-gray-50"
+              onClick={onOpenApiKeySettings}
+              aria-label="API Key Settings"
+              title="Configure API Key"
+            >
+              🔑 API Key
+            </button>
+            <select
+              className="rounded-full border border-black/15 bg-white/80 px-3 py-1 text-xs"
+              value={modelId}
+              onChange={(event) => onModelChange(event.target.value)}
+              aria-label="Select model"
+              disabled={isLoadingModels}
+            >
+              {isLoadingModels ? (
+                <option>Loading models...</option>
+              ) : availableModels.length > 0 ? (
+                availableModels.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="google/gemini-2.0-flash-exp:free">
+                    gemini-2.0-flash-exp:free
+                  </option>
+                  <option value="meta-llama/llama-3-8b-instruct:free">
+                    llama-3-8b-instruct:free
+                  </option>
+                </>
+              )}
+            </select>
+          </div>
         </div>
       </header>
       <div className="flex-1 space-y-4 overflow-y-auto p-4" aria-live="polite">

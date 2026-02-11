@@ -1,28 +1,21 @@
-from pydantic import BaseModel, Field, validator
-
-from app.core.config import settings
-
-
-def validate_model_id(model_id: str) -> str:
-    if model_id not in settings.allowed_model_ids:
-        raise ValueError("Unsupported model_id")
-    return model_id
+from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=4000)
+    message: str
     model_id: str
     conversation_id: str | None = None
-
-    _model_id_allowed = validator("model_id", allow_reuse=True)(validate_model_id)
+    api_key: str | None = None  # User-provided API key
 
 
 class CreateConversationRequest(BaseModel):
-    title: str | None = Field(default=None, max_length=120)
+    title: str | None = None
     model_id: str
-
-    _model_id_allowed = validator("model_id", allow_reuse=True)(validate_model_id)
 
 
 class UpdateConversationRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=120)
+    title: str
+
+
+class ModelsRequest(BaseModel):
+    api_key: str  # User-provided API key for fetching models

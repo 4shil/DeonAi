@@ -8,7 +8,7 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: OPENROUTER_API_KEY
-        sync: false
+        sync: true
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -18,9 +18,9 @@ services:
       - key: CORS_ALLOW_ORIGINS
         value: https://chatbot-frontend-unb3.onrender.com,http://localhost:3000
       - key: ALLOWED_MODEL_IDS
-        sync: false
+        value: gpt-4,gpt-3.5-turbo,mistral,samba-24b
       - key: RATE_LIMIT_MAX_REQUESTS
-        value: 60
+        value: 100
       - key: RATE_LIMIT_WINDOW_SECONDS
         value: 60
 
