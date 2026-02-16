@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 type Conversation = {
@@ -33,6 +34,15 @@ export default function Sidebar({
   const filtered = conversations.filter((c) =>
     c.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus search when sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 200)
+    }
+  }, [isOpen])
 
   return (
     <>
@@ -81,6 +91,7 @@ export default function Sidebar({
         {/* Search */}
         <div className="px-3 pb-2">
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
