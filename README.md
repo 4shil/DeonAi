@@ -1,61 +1,72 @@
-# DeonAI v2.0 - Modern UI Edition
+# DeonAI
 
-![DeonAI](https://img.shields.io/badge/DeonAI-v2.0-purple?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Production-success?style=for-the-badge)
+A terminal-inspired AI chat interface built with Next.js, FastAPI, Supabase, and OpenRouter.
 
-## ✨ Features
+## Stack
 
-### 🎨 Modern UI/UX
-- **Glassmorphic Design** - Beautiful glass-effect components with backdrop blur
-- **Animated Gradients** - Dynamic background with floating color orbs
-- **Smooth Animations** - Micro-interactions and transitions throughout
-- **Responsive Layout** - Perfect on desktop, tablet, and mobile
-- **Dark Theme** - Easy on the eyes with vibrant accent colors
+- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, Supabase (PostgreSQL + Auth), OpenRouter
+- **Deployment**: Render
 
-### 🤖 AI Capabilities
-- **Multiple Models** - Choose from various OpenRouter models
-- **Streaming Responses** - Real-time AI responses as they generate
-- **Conversation Management** - Save, load, and manage multiple chats
-- **User API Keys** - Bring your own OpenRouter API key
+## Features
 
-### 🔐 Security
-- **Supabase Authentication** - Secure email/password auth
-- **JWT Tokens** - Secure API communication
-- **Row-Level Security** - Database-level access control
-- **Encrypted Storage** - Secure credential handling
+- Dark, terminal-style interface (no glassmorphism)
+- Multiple AI model support via OpenRouter
+- Streaming responses (Server-Sent Events)
+- Conversation management with search
+- Keyboard shortcuts (Cmd+N, Cmd+K, Cmd+,)
+- Code blocks with syntax detection and copy
+- Responsive design with mobile sidebar
+- Supabase authentication (email/password)
+- User-provided API keys (stored locally)
 
-## 🚀 Tech Stack
+## Quick Start
 
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **Custom Animations** - Hand-crafted CSS animations
+### Prerequisites
+
+- Node.js 18+
+- Python 3.9+
+- Supabase project
+- OpenRouter API key
 
 ### Backend
-- **FastAPI** - Modern Python API framework
-- **Supabase** - PostgreSQL database + Auth
-- **OpenRouter** - AI model aggregation
-- **Server-Sent Events** - Real-time streaming
 
-### Deployment
-- **Render** - Auto-deploy from GitHub
-- **render.yaml** - Infrastructure as code
-
-## 🎯 Quick Start
-
-### 1. Clone Repository
 ```bash
-git clone https://github.com/4shil/DeonAi.git
-cd DeonAi
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-### 2. Setup Supabase
+### Frontend
 
-Run this SQL in your Supabase SQL editor:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Environment Variables
+
+**Backend** (`.env`):
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+CORS_ALLOW_ORIGINS=http://localhost:3000
+```
+
+**Frontend** (`.env.local`):
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+### Database Setup
+
+Run in Supabase SQL editor:
 
 ```sql
--- Conversations table
 CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -64,7 +75,6 @@ CREATE TABLE conversations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Messages table
 CREATE TABLE messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -73,11 +83,9 @@ CREATE TABLE messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable RLS
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
 CREATE POLICY "Users can manage own conversations"
   ON conversations FOR ALL
   USING (auth.uid() = user_id)
@@ -85,94 +93,23 @@ CREATE POLICY "Users can manage own conversations"
 
 CREATE POLICY "Users can manage messages in own conversations"
   ON messages FOR ALL
-  USING (
-    conversation_id IN (
-      SELECT id FROM conversations WHERE user_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    conversation_id IN (
-      SELECT id FROM conversations WHERE user_id = auth.uid()
-    )
-  );
+  USING (conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid()))
+  WITH CHECK (conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid()));
 ```
 
-### 3. Environment Variables
+## Keyboard Shortcuts
 
-#### Backend (`.env` or Render)
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_JWT_SECRET=your_jwt_secret
-OPENROUTER_API_KEY=optional_fallback_key
-CORS_ALLOW_ORIGINS=https://your-frontend.onrender.com
-```
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+N` | New conversation |
+| `Cmd+K` | Search conversations |
+| `Cmd+,` | Open settings |
+| `Escape` | Close modal / Focus input |
+| `/` | Focus input |
+| `Enter` | Send message |
+| `Shift+Enter` | New line |
 
-#### Frontend (`.env.local` or Render)
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-NEXT_PUBLIC_API_BASE_URL=https://your-backend.onrender.com
-```
-
-### 4. Local Development
-
-#### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-#### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Visit `http://localhost:3000`
-
-### 5. Deploy to Render
-
-1. Push to GitHub
-2. Connect Render to your repo
-3. Render auto-detects `render.yaml`
-4. Set environment variables in dashboard
-5. Deploy! 🎉
-
-## 📱 Screenshots
-
-### Login Screen
-Glassmorphic authentication with animated gradient background
-
-### Chat Interface
-Modern message bubbles with smooth streaming and beautiful transitions
-
-### Sidebar
-Elegant conversation list with hover effects and gradients
-
-## 🎨 Design System
-
-### Colors
-- **Primary Gradient**: Blue → Purple → Pink
-- **Background**: Dark with animated gradients
-- **Glass Effect**: rgba(255, 255, 255, 0.05-0.08)
-- **Borders**: White with 10-20% opacity
-
-### Animations
-- **Gradient Shift**: 15s infinite background animation
-- **Float**: 20s floating orbs with blur
-- **Fade In**: 0.5s smooth element appearances
-- **Hover Lift**: 0.3s transform on hover
-- **Shimmer**: 3s infinite shine effect
-
-### Typography
-- **System Fonts**: -apple-system, BlinkMacSystemFont, Segoe UI
-- **Weights**: 400 (regular), 600 (semibold), 700 (bold)
-- **Tracking**: Wide for headings, normal for body
-
-## 📚 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -183,48 +120,17 @@ Elegant conversation list with hover effects and gradients
 | PATCH | `/api/conversations/{id}` | Update conversation |
 | DELETE | `/api/conversations/{id}` | Delete conversation |
 | POST | `/api/chat` | Stream chat response |
-| POST | `/api/models` | Fetch available models |
 
-## 🔧 Configuration
+## Design
 
-### Available Models
-- `google/gemini-2.0-flash-exp:free` - Google's latest
-- `meta-llama/llama-3-8b-instruct:free` - Meta's Llama 3
-- *Add more in the model selector*
+- Colors: `#0a0a0a`, `#1a1a1a`, `#2a2a2a` (dark grays), `#10b981` (accent green)
+- Fonts: Inter (UI), JetBrains Mono (code)
+- No animations, no glassmorphism - clean and functional
 
-### Rate Limiting
-- 100 requests per 60 seconds (configurable)
-- Per-user tracking via JWT
+## License
 
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License - Use freely!
-
-## 🙏 Acknowledgments
-
-- **Supabase** - Backend infrastructure
-- **OpenRouter** - AI model access
-- **Render** - Hosting platform
-- **Tailwind CSS** - Styling framework
-
-## 📞 Support
-
-For issues or questions:
-- GitHub Issues: [Create an issue](https://github.com/4shil/DeonAi/issues)
-- Documentation: See README.md
+MIT
 
 ---
 
-Built with 💜 by Ashil
-
-
----
-*Updated by Niya (OpenClaw) with Idukki vibes.*
+Built by Ashil
