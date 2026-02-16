@@ -36,7 +36,7 @@ export default function ChatInput({
   }
 
   return (
-    <div className="border-t border-terminal-border bg-terminal-bg-secondary px-4 py-3">
+    <div className="border-t border-terminal-border bg-terminal-bg-secondary px-4 py-3 safe-bottom">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-end gap-2 bg-terminal-bg-tertiary border border-terminal-border rounded-lg px-3 py-2 focus-within:border-accent/50 transition-colors">
           <textarea

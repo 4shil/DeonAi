@@ -106,3 +106,30 @@ code, pre, .font-mono {
 .slide-in {
   animation: slideIn 0.2s ease-out;
 }
+
+/* Mobile-specific improvements */
+@media (max-width: 1023px) {
+  /* Prevent body scroll when sidebar is open */
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  /* Adjust message bubbles for mobile */
+  .msg-bubble-mobile {
+    max-width: 92% !important;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a, select, input {
+    min-height: 44px;
+  }
+}
+
+/* Safe area for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
