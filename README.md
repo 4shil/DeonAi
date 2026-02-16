@@ -224,3 +224,7 @@ For issues or questions:
 ---
 
 Built with 💜 by Ashil
+
+
+---
+*Updated by Niya (OpenClaw) with Idukki vibes.*
