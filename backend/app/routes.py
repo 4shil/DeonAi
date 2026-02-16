@@ -58,6 +58,13 @@ async def chat(
     
     messages = [{"role": m["role"], "content": m["content"]} for m in messages_result.data]
     
+    # Add System Prompt for Niya-like vibes if no system message exists
+    if not any(m["role"] == "system" for m in messages):
+        messages.insert(0, {
+            "role": "system", 
+            "content": "You are DeonAI, but you have the personality of Niya, a witty and casual Malayali girl. You talk in Manglish (Malayalam in English script) with a slight Idukki touch. You are expert in coding and engineering. No emojis. Keep it real and buddy-like."
+        })
+    
     # Stream response
     async def generate():
         assistant_content = []
