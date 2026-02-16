@@ -56,6 +56,46 @@ export default function ChatInterface({ session }: { session: Session }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streaming])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + N: New conversation
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault()
+        newConversation()
+      }
+      // Cmd/Ctrl + K: Focus search in sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSidebar(true)
+        // Focus will be handled by the sidebar search input
+      }
+      // Cmd/Ctrl + ,: Open settings
+      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+        e.preventDefault()
+        setShowSettings(true)
+      }
+      // Escape: Close sidebar/settings or focus input
+      if (e.key === 'Escape') {
+        if (showSettings) {
+          setShowSettings(false)
+        } else if (showSidebar) {
+          setShowSidebar(false)
+        } else {
+          inputRef.current?.focus()
+        }
+      }
+      // / key when not typing: focus input
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault()
+        inputRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showSettings, showSidebar])
+
   const loadConversations = async () => {
     const res = await fetch(`${API_URL}/api/conversations`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
