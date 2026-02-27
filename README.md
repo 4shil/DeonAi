@@ -1,26 +1,18 @@
-# DeonAI
+# DeonAi
 
-A terminal-inspired AI chat interface built with Next.js, FastAPI, Supabase, and OpenRouter.
+A terminal-inspired AI chat interface. Dark, minimal, keyboard-driven. Built with Next.js on the frontend and FastAPI on the backend, using Supabase for auth and storage and OpenRouter for model access.
+
+![terminal chat interface](https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif)
 
 ## Stack
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: FastAPI, Supabase (PostgreSQL + Auth), OpenRouter
-- **Deployment**: Render
+- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+- **Backend:** FastAPI (Python)
+- **Auth & Database:** Supabase (PostgreSQL + Row Level Security)
+- **AI:** OpenRouter (bring your own API key)
+- **Deployment:** Render
 
-## Features
-
-- Dark, terminal-style interface (no glassmorphism)
-- Multiple AI model support via OpenRouter
-- Streaming responses (Server-Sent Events)
-- Conversation management with search
-- Keyboard shortcuts (Cmd+N, Cmd+K, Cmd+,)
-- Code blocks with syntax detection and copy
-- Responsive design with mobile sidebar
-- Supabase authentication (email/password)
-- User-provided API keys (stored locally)
-
-## Quick Start
+## Getting Started
 
 ### Prerequisites
 
@@ -34,6 +26,7 @@ A terminal-inspired AI chat interface built with Next.js, FastAPI, Supabase, and
 ```bash
 cd backend
 pip install -r requirements.txt
+cp .env.example .env   # fill in your values
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -42,29 +35,34 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
+cp .env.local.example .env.local   # fill in your values
 npm run dev
 ```
 
-### Environment Variables
+Open [http://localhost:3000](http://localhost:3000).
 
-**Backend** (`.env`):
+## Environment Variables
+
+**Backend** (`backend/.env`):
+
 ```
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_JWT_SECRET=your_jwt_secret
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_JWT_SECRET=
 CORS_ALLOW_ORIGINS=http://localhost:3000
 ```
 
-**Frontend** (`.env.local`):
+**Frontend** (`frontend/.env.local`):
+
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-### Database Setup
+## Database Setup
 
-Run in Supabase SQL editor:
+Run the following in your Supabase SQL editor:
 
 ```sql
 CREATE TABLE conversations (
@@ -97,40 +95,46 @@ CREATE POLICY "Users can manage messages in own conversations"
   WITH CHECK (conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid()));
 ```
 
+## Project Structure
+
+```
+DeonAi/
+├── frontend/
+│   ├── app/            # Next.js app router pages
+│   ├── components/     # UI components
+│   └── lib/            # Supabase client, utilities
+└── backend/
+    ├── app/
+    │   ├── main.py     # FastAPI entrypoint
+    │   ├── routes/     # API route handlers
+    │   └── services/   # OpenRouter, Supabase logic
+    └── requirements.txt
+```
+
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd+N` | New conversation |
-| `Cmd+K` | Search conversations |
-| `Cmd+,` | Open settings |
-| `Escape` | Close modal / Focus input |
-| `/` | Focus input |
-| `Enter` | Send message |
-| `Shift+Enter` | New line |
+| Shortcut       | Action                  |
+|----------------|-------------------------|
+| `Cmd+N`        | New conversation        |
+| `Cmd+K`        | Search conversations    |
+| `Cmd+,`        | Open settings           |
+| `Escape`       | Close modal / blur      |
+| `/`            | Focus input             |
+| `Enter`        | Send message            |
+| `Shift+Enter`  | Insert newline          |
 
-## API Endpoints
+## API Reference
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/conversations` | List conversations |
-| POST | `/api/conversations` | Create conversation |
-| GET | `/api/conversations/{id}/messages` | Get messages |
-| PATCH | `/api/conversations/{id}` | Update conversation |
-| DELETE | `/api/conversations/{id}` | Delete conversation |
-| POST | `/api/chat` | Stream chat response |
-
-## Design
-
-- Colors: `#0a0a0a`, `#1a1a1a`, `#2a2a2a` (dark grays), `#10b981` (accent green)
-- Fonts: Inter (UI), JetBrains Mono (code)
-- No animations, no glassmorphism - clean and functional
+| Method | Endpoint                              | Description              |
+|--------|---------------------------------------|--------------------------|
+| GET    | `/health`                             | Health check             |
+| GET    | `/api/conversations`                  | List conversations       |
+| POST   | `/api/conversations`                  | Create conversation      |
+| GET    | `/api/conversations/{id}/messages`    | Get messages             |
+| PATCH  | `/api/conversations/{id}`             | Rename conversation      |
+| DELETE | `/api/conversations/{id}`             | Delete conversation      |
+| POST   | `/api/chat`                           | Stream chat (SSE)        |
 
 ## License
 
 MIT
-
----
-
-Built by Ashil
