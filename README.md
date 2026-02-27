@@ -1,33 +1,61 @@
 # DeonAi
 
-A terminal-inspired AI chat interface. Dark, minimal, keyboard-driven. Built with Next.js on the frontend and FastAPI on the backend, using Supabase for auth and storage and OpenRouter for model access.
+A terminal-inspired AI chat interface with multi-model support, conversation history, and user authentication. Frontend in Next.js, backend in FastAPI, persistence via Supabase.
 
-![terminal chat interface](https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif)
+![demo](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWZhZmpzM3IxeHBncGlhY3kwNWhxdjZ3Mno1djhxcG8wdWZteGt2ZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26tn33aiTi1jkl6H6/giphy.gif)
+
+---
 
 ## Stack
 
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-- **Backend:** FastAPI (Python)
-- **Auth & Database:** Supabase (PostgreSQL + Row Level Security)
-- **AI:** OpenRouter (bring your own API key)
-- **Deployment:** Render
+**Frontend**
+- Next.js 14 + TypeScript
+- Tailwind CSS
+- Supabase JS client (auth)
 
-## Getting Started
+**Backend**
+- FastAPI + Uvicorn
+- httpx (OpenRouter API calls)
+- PyJWT (token verification)
+- Supabase Python client
+
+**Infrastructure**
+- Supabase (auth + database)
+- OpenRouter (model routing — access 200+ models with one API key)
+
+---
+
+## Architecture
+
+```
+Browser (Next.js)
+    ↓ auth via Supabase
+FastAPI backend
+    ↓ forwards requests
+OpenRouter API → any LLM (GPT, Claude, Mistral, etc.)
+    ↑
+Supabase — stores conversation history + user data
+```
+
+---
+
+## Getting started
 
 ### Prerequisites
 
 - Node.js 18+
-- Python 3.9+
-- Supabase project
-- OpenRouter API key
+- Python 3.10+
+- A [Supabase](https://supabase.com) project
+- An [OpenRouter](https://openrouter.ai) API key
 
 ### Backend
 
 ```bash
 cd backend
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # fill in your values
-uvicorn app.main:app --reload --port 8000
+cp ../.env.example .env  # fill in your keys
+uvicorn app.main:app --reload
 ```
 
 ### Frontend
@@ -35,105 +63,76 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local   # fill in your values
+cp ../.env.example .env.local  # fill in NEXT_PUBLIC_ vars
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Visit `http://localhost:3000`.
 
-## Environment Variables
+---
 
-**Backend** (`backend/.env`):
+## Environment variables
 
-```
+```bash
+# Backend
+OPENROUTER_API_KEY=
+OPENROUTER_API_URL=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_JWT_SECRET=
 CORS_ALLOW_ORIGINS=http://localhost:3000
-```
 
-**Frontend** (`frontend/.env.local`):
-
-```
+# Frontend
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-## Database Setup
+---
 
-Run the following in your Supabase SQL editor:
-
-```sql
-CREATE TABLE conversations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  model_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage own conversations"
-  ON conversations FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can manage messages in own conversations"
-  ON messages FOR ALL
-  USING (conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid()))
-  WITH CHECK (conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid()));
-```
-
-## Project Structure
+## Project structure
 
 ```
 DeonAi/
+├── backend/
+│   └── app/
+│       ├── main.py        # FastAPI app init
+│       ├── routes.py      # API route handlers
+│       ├── ai.py          # OpenRouter integration
+│       ├── auth.py        # JWT verification
+│       ├── database.py    # Supabase client
+│       └── config.py      # Env config
 ├── frontend/
-│   ├── app/            # Next.js app router pages
-│   ├── components/     # UI components
-│   └── lib/            # Supabase client, utilities
-└── backend/
-    ├── app/
-    │   ├── main.py     # FastAPI entrypoint
-    │   ├── routes/     # API route handlers
-    │   └── services/   # OpenRouter, Supabase logic
-    └── requirements.txt
+│   ├── app/               # Next.js app router
+│   ├── components/
+│   │   ├── ChatInterface.tsx
+│   │   ├── ChatInput.tsx
+│   │   ├── MessageBubble.tsx
+│   │   ├── Sidebar.tsx         # Conversation list
+│   │   ├── SettingsModal.tsx
+│   │   ├── AuthGate.tsx
+│   │   ├── Header.tsx
+│   │   └── TypingIndicator.tsx
+│   └── lib/
+│       └── supabase.ts
+├── supabase/
+│   └── schema.sql         # Database schema
+└── .env.example
 ```
 
-## Keyboard Shortcuts
+---
 
-| Shortcut       | Action                  |
-|----------------|-------------------------|
-| `Cmd+N`        | New conversation        |
-| `Cmd+K`        | Search conversations    |
-| `Cmd+,`        | Open settings           |
-| `Escape`       | Close modal / blur      |
-| `/`            | Focus input             |
-| `Enter`        | Send message            |
-| `Shift+Enter`  | Insert newline          |
+## Database
 
-## API Reference
+Run `supabase/schema.sql` in your Supabase SQL editor to set up the required tables.
 
-| Method | Endpoint                              | Description              |
-|--------|---------------------------------------|--------------------------|
-| GET    | `/health`                             | Health check             |
-| GET    | `/api/conversations`                  | List conversations       |
-| POST   | `/api/conversations`                  | Create conversation      |
-| GET    | `/api/conversations/{id}/messages`    | Get messages             |
-| PATCH  | `/api/conversations/{id}`             | Rename conversation      |
-| DELETE | `/api/conversations/{id}`             | Delete conversation      |
-| POST   | `/api/chat`                           | Stream chat (SSE)        |
+---
+
+## Deployment
+
+A `render.yaml` is included for one-click deploy to [Render](https://render.com). Set environment variables in the Render dashboard.
+
+---
 
 ## License
 
